@@ -11,9 +11,19 @@ Contents:
 * :ref:`database`
 
 .. toctree::
-   :maxdepth: 2
+    :maxdepth: 2
 
-   database
+    database
+    pychallenge
+
+
+Subpackages
+-----------
+
+.. toctree::
+
+    pychallenge.utils
+
 
 Indices and tables
 ==================

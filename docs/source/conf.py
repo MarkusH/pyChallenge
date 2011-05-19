@@ -16,7 +16,9 @@ import subprocess, sys, os
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-#sys.path.insert(0, os.path.abspath('.'))
+sys.path.insert(0, os.path.abspath(os.path.join('.', '..', '..')))
+sys.path.insert(0, os.path.abspath('.'))
+import pychallenge
 
 # -- General configuration -----------------------------------------------------
 
@@ -51,7 +53,7 @@ rev = subprocess.Popen(['git', 'rev-parse', 'HEAD'], cwd='..',
         stdout=subprocess.PIPE).communicate()[0].strip()[:8]
 #
 # The short X.Y version.
-version = '0.1'
+version = pychallenge.get_version()
 # The full version, including alpha/beta/rc tags.
 release = '0.1 %s' % rev
 
