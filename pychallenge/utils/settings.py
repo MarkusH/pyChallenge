@@ -1,7 +1,10 @@
-import os
+from os.path import dirname, join
+
+BASE_PATH = dirname(__file__)
 
 SETTINGS = {
-    'DATABASE': 'data.db',
+    'BASE_PATH': BASE_PATH,
+    'DATABASE': join(BASE_PATH, '..', '..', 'data.db'),
     'DEBUG': False,
 }
 
