@@ -19,6 +19,15 @@ utils Package
     :show-inheritance:
 
 
+:mod:`models` Module
+----------------------
+
+.. automodule:: pychallenge.utils.models
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
 :mod:`settings` Module
 ----------------------
 
