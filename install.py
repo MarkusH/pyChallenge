@@ -4,7 +4,7 @@ import pychallenge
 from pychallenge.utils.db import db
 
 db.executescript("""
-    CREATE TABLE `algoritm` (
+    CREATE TABLE `algorithm` (
         `algorithm_id` INTEGER PRIMARY KEY,
         `name` TEXT,
         `description` TEXT,
