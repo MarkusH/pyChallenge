@@ -1,69 +1,33 @@
+import copy
 from pychallenge.utils.db import db, connection
-
-
-class Field():
-   
-    def __init__(self, value=None, **kwargs):
-        self.set_value(value)
-
-    def get_value(self):
-        """
-        :return: returns the value of that field
-        """
-        return self.value
-
-    def clean(self, value):
-        """
-        :param value: clean `value`
-        :return: cleans up the value and returns the cleaned data
-        """
-        return value
-
-    def set_value(self, value):
-        """
-        :param value: this is the setter function for the value
-        """
-        self.value = self.clean(value)
-
-class Numeric(Field):
-    pass
-
-class Text(Field):
-    pass
-
-class PK(Field):
-    pass
-
-class FK(Numeric):
-
-    def __init__(self, ref_table, value=None):
-        self.ref_table = ref_table
-        self.value = self.clean(value)
+from pychallenge.utils.fields import Field, Numeric, Text, PK, FK
 
 class Model(object):
+    """
+    This is the general Model class. All Models inherit from this one
+    """
 
     id = PK()
-
-    __meta__ = {
-        'fields': {},
-        'name': "",
-        'pk': None
-    }
 
     def __init__(self, **kwargs):
         """
         This initializes a new model object.
-        :param **kwargs: a dictionary with the model fields as index
+        :param kwargs: a dictionary with the model fields as index and
+        their value
+        :type kwargs: dictionary
         """
+        self.__meta__ = {}
         self.__meta__['fields'] = {}
         self.__meta__['name'] = self.__class__.__name__.lower()
-        for f, t in self.__class__.__dict__.items():
-            if isinstance(t, Field):
-                if f in kwargs:
-                    t.set_value(kwargs.get(f))
-                self.__meta__['fields'][f] = t
-                if isinstance(t, PK):
-                    self.__meta__['pk'] = f
+        for fname, ftype in self.__class__.__dict__.items():
+            if isinstance(ftype, Field):
+                # We need :py:func:`copy.copy` here, since ``ftype`` is the
+                # same for each model instance of the same class
+                new_field = copy.copy(ftype)
+                new_field.value = kwargs.get(fname, None)
+                self._set_meta_field(fname, new_field)
+                if isinstance(new_field, PK):
+                    self.__meta__['pk'] = fname
 
     def pk(self):
         """
@@ -76,13 +40,15 @@ class Model(object):
         :param commit: If true, each change will direct affect the database
         :type commit: Boolean
         """
-        if self.pk() and self.__meta__['fields'][self.pk()].get_value():
+        if self.pk() and self.__meta__['fields'][self.pk()].value:
             cmd = "UPDATE %(_tablename)s SET " % {
                 '_tablename': self.__meta__['name']
             }
             cmd += ", ". join("%s = :%s" % (f, f)
                 for f in self.__meta__['fields'].keys() if
                     self.__meta__['pk'] != f)
+            cmd += " WHERE %s = :%s" % (self.__meta__['pk'],
+                self.__meta__['pk'])
         else:
             flist = []
             flist2 = []
@@ -95,9 +61,46 @@ class Model(object):
                 '_tablename': self.__meta__['name'], 'fl':fl, 'fl2':fl2}
         values = {}
         for f, t in self.__meta__['fields'].items():
-            values[f] = t.get_value()
+            values[f] = t.value
         db.execute(cmd, values)
         if commit:
             connection.commit()
         self.__meta__['fields'][self.pk()].set_value(db.lastrowid)
 
+    def _set_meta_field(self, name, value):
+        """
+        :param name: This is the name of a field
+        :param value: The value that will be assigned to the field
+        :type name: String
+        :type value: variable
+        """
+        self.__meta__['fields'][name] = value
+
+    def _get_meta_field(self, name, default=None):
+        """
+        :param name: The name of the referred field
+        :param default: A default value that will be returned if the field
+            does not exists
+        :type name: String
+        :type default: variable
+        :return: either the value of field :py:attr:`name` or
+            :py:attr:`default` if not defined
+        """
+        return self.__meta__['fields'].get(name, default)
+
+    def __setattr__(self, name, value):
+        """
+        Overloaded :py:func:`__setter__` function to set field values
+
+        :param name: The name of the referred field
+        :param value: The value that will be stored
+        :type name: String
+        :type String: variable
+        """
+        if self.__dict__:
+            if name in self.__meta__['fields']:
+                self.__meta__['fields'][name].value = value
+            else:
+                self.__dict__[name] = value
+        else:
+            super(Model, self).__setattr__(name, value)

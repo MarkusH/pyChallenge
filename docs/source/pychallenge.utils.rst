@@ -19,6 +19,18 @@ utils Package
     :show-inheritance:
 
 
+:mod:`fields` Module
+----------------------
+
+.. automodule:: pychallenge.utils.fields
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    :private-members:
+    :special-members:
+    :exclude-members: __module__, __weakref__
+
+
 :mod:`models` Module
 ----------------------
 
@@ -26,6 +38,9 @@ utils Package
     :members:
     :undoc-members:
     :show-inheritance:
+    :private-members:
+    :special-members:
+    :exclude-members: __dict__, __module__, __weakref__, id
 
 
 :mod:`settings` Module
