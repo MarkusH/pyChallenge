@@ -3,3 +3,5 @@ data.db
 .*
 *.pyc
 pychallenge/usersettings.py
+
+pychallenge.psproj
