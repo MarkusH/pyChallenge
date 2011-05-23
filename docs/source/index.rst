@@ -23,6 +23,7 @@ Subpackages
 .. toctree::
 
     pychallenge.utils
+    pychallenge.algorithms
 
 
 Indices and tables
