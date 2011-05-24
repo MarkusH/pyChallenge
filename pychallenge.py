@@ -15,3 +15,6 @@ b.description = 'bar_desc2'
 b.algorithm_type_id = 22
 a.save()
 b.save()
+
+print(Algorithm.get(name='foo'))
+print(Algorithm.get(name='bar_name', algorithm_type_id='23'))

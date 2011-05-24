@@ -67,6 +67,39 @@ class Model(object):
             connection.commit()
         self.__meta__['fields'][self.pk()].set_value(db.lastrowid)
 
+    @classmethod
+    def get(cls, **kwargs):
+        """
+        :return: list of instances matching the given attributes
+        """
+        fields = [f for f, t in cls.__dict__.items() if isinstance(t, Field)]
+
+        exists = lambda x: x in fields 
+
+        matching = filter(exists, kwargs)
+
+        cmd = "SELECT %(_fieldlist)s FROM %(_tablename)s" % {
+            '_fieldlist': ", ".join(fields),
+            '_tablename': cls.__name__.lower(),
+        }
+        if len(matching) > 0:
+            cmd += " WHERE "
+            cmd += " and ". join("%s = :%s" % (f, f) for f in matching)
+        values = {}
+        for f in matching:
+            values[f] = kwargs.get(f)
+        db.execute(cmd, values)
+        result =[]
+        for row in db:
+            i = 0
+            tmp = {}
+            while i < len(row):
+                tmp[fields[i]] = row[i]
+                i += 1
+            result.append(copy.copy(tmp))
+        return result if len(result) > 0 else None
+
+
     def _set_meta_field(self, name, value=None, instance=None):
         """
         :param name: This is the name of a field
