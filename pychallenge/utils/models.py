@@ -25,7 +25,7 @@ class Model(object):
                 # same for each model instance of the same class
                 new_field = copy.copy(ftype)
                 new_field.value = kwargs.get(fname, None)
-                self._set_meta_field(fname, new_field)
+                self._set_meta_field(fname, instance=new_field)
                 if isinstance(new_field, PK):
                     self.__meta__['pk'] = fname
 
@@ -67,26 +67,36 @@ class Model(object):
             connection.commit()
         self.__meta__['fields'][self.pk()].set_value(db.lastrowid)
 
-    def _set_meta_field(self, name, value):
+    def _set_meta_field(self, name, value=None, instance=None):
         """
         :param name: This is the name of a field
         :param value: The value that will be assigned to the field
+        :param instance: This attribute is used for adding a new field to the model
         :type name: String
         :type value: variable
+        :type instance: :py:class:`pychallenge.utils.fields.Field`
         """
-        self.__meta__['fields'][name] = value
+        assert bool(value) ^ bool(instance)
 
-    def _get_meta_field(self, name, default=None):
+        if not (instance or name in self.__meta__['fields']):
+            raise AttributeError('The field "%s" does not exists in model "%s"' %
+                (name, self.__meta__['name']))
+        if instance:
+            self.__meta__['fields'][name] = instance
+        else:
+            self.__meta__['fields'][name].value = value
+
+    def _get_meta_field(self, name):
         """
         :param name: The name of the referred field
-        :param default: A default value that will be returned if the field
-            does not exists
         :type name: String
-        :type default: variable
         :return: either the value of field :py:attr:`name` or
             :py:attr:`default` if not defined
         """
-        return self.__meta__['fields'].get(name, default)
+        if not name in self.__meta__['fields']:
+            raise AttributeError("The field %s does not exists in model %s" %
+                (name, self.__meta__['name']))
+        return self.__meta__['fields'].get(name)
 
     def __setattr__(self, name, value):
         """
@@ -98,9 +108,9 @@ class Model(object):
         :type String: variable
         """
         if self.__dict__:
-            if name in self.__meta__['fields']:
-                self.__meta__['fields'][name].value = value
-            else:
+            try:
+                self._set_meta_field(name, value=value)
+            except AttributeError:
                 self.__dict__[name] = value
         else:
             super(Model, self).__setattr__(name, value)
