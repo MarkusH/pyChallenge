@@ -35,9 +35,11 @@ def getCurrentRD(RD, c, t):
     :type t:
     :return:
     """
+    rd2 = RD*RD
+    c2 = c*c*t
+    currentRD = math.sqrt(rd2 + c2)
 
-    currentRD = math.sqrt((RD**2) + (c**2*t))
-    return currentRD if courrentRD < 350.0 else 350.
+    return currentRD if courrentRD < 350.0 else 350.0
 
 def g(RD):
     """
@@ -46,7 +48,10 @@ def g(RD):
     :param RD: level of certainty (maximum 350) (Ratings Deviation)
     :return:
     """
-    return 1/math.sqrt((1+(3*(q**2)*(RD**2)))/math.pi**2)
+    q2 = 3.0*q*q*RD*RD
+    pi2 = math.pi*math.pi
+
+    return (math.sqrt(1.0+(q2/pi2)))**-1
 
 def expectation(ratingOwn, ratingPlayer2, RDPlayer2):
     """
@@ -60,8 +65,9 @@ def expectation(ratingOwn, ratingPlayer2, RDPlayer2):
     :type RDPlayer2:
     :return: expected result for a match
     """
-    exponent = (-1*g(RDPlayer2)*(ratingOwn-ratingPlayer2))/400.0
-    return 1/(1 + (10**exponent))
+    exponent = (-1.0*g(RDPlayer2)*(ratingOwn-ratingPlayer2))/400.0
+
+    return 1/(1.0 + (10.0**exponent))
 
 def dSquared(ratingOwn, ratingList, RDList):
     """
@@ -78,10 +84,12 @@ def dSquared(ratingOwn, ratingList, RDList):
     assert ratingList and RDList and len(ratingList) == len(RDList)
     sum = 0.0
     for RD in RDList:
-        sum += (g(RD)**2)*(expectation(ratingOwn, ratingList[RDList.index(RD)], RD))*(1-expectation(ratingOwn, ratingList[RDList.index(RD)], RD))
+        g2 = g(RD)*g(RD)
+        e = expectation(ratingOwn, ratingList[RDList.index(RD)], RD)
+        sum += g2*e*(1.0-e)
 
-    sum = (q**2)*sum
-    result = 1/sum
+    sum = q*q*sum
+    result = 1.0/sum
 
     return result
 
@@ -105,11 +113,14 @@ def newRating(RDOwn, ratingOwn, ratingList, RDList, outcomeList):
     assert ratingList and RDList and outcomeList and \
         len(ratingList) == len(RDList) and len(ratingList) == len(outcomeList)
 
-    factor = q/((1/(RDOwn**2))+(1/dSquared(ratingOwn, ratingList, RDList)))
+    d2 = dSquared(ratingOwn, ratingList, RDList)
+
+    factor = q/((1.0/(RDOwn**2.0))+(1.0/d2))
 
     sum = 0.0
     for RD in RDList:
-        sum += g(RD)*(outcomeList[RDList.index(RD)] - expectation(ratingOwn, ratingList[RDList.index(RD)], RD))
+        e = expectation(ratingOwn, ratingList[RDList.index(RD)], RD)
+        sum += g(RD)*(outcomeList[RDList.index(RD)] - e)
 
     result = ratingOwn + (factor*sum)
 
@@ -127,7 +138,11 @@ def newRD(RDOwn, ratingOwn, ratingList, RDList):
     :type ratingOwn:
     :type ratingList:
     :type RDList:
+    :return:
     """
-    result = 1/((1/(RDOwn**2)) + (1/dSquared(ratingOwn, ratingList, RDList)))
+    d2 = dSquared(ratingOwn, ratingList, RDList)
+    rd2 = RDOwn*RDOwn
+    result = math.sqrt(1.0/((1.0/(r2) + (1.0/d2))))
+
     return result
 
