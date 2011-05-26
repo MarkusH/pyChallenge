@@ -39,7 +39,7 @@ def getCurrentRD(RD, c, t):
     c2 = c*c*t
     currentRD = math.sqrt(rd2 + c2)
 
-    return currentRD if courrentRD < 350.0 else 350.0
+    return currentRD if currentRD < 350.0 else 350.0
 
 def g(RD):
     """
