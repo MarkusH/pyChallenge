@@ -7,8 +7,6 @@ class Model(object):
     This is the general Model class. All Models inherit from this one
     """
 
-    id = PK()
-
     def __init__(self, **kwargs):
         """
         This initializes a new model object.
@@ -41,14 +39,14 @@ class Model(object):
         :type commit: Boolean
         """
         if self.pk() and self.__meta__['fields'][self.pk()].value:
-            cmd = "UPDATE %(_tablename)s SET " % {
-                '_tablename': self.__meta__['name']
-            }
+            cmd = "UPDATE %s SET " % self.__meta__['name']
+            # a=:a, b=:b, c=:c
+            # [x+x for x in [1,2,3,4] if x % 2 == 0]
+            # [4, 8]
             cmd += ", ". join("%s = :%s" % (f, f)
                 for f in self.__meta__['fields'].keys() if
                     self.__meta__['pk'] != f)
-            cmd += " WHERE %s = :%s" % (self.__meta__['pk'],
-                self.__meta__['pk'])
+            cmd += " WHERE %s = :%s" % (self.pk(), self.pk())
         else:
             flist = []
             flist2 = []
@@ -76,20 +74,20 @@ class Model(object):
 
         exists = lambda x: x in fields 
 
-        matching = filter(exists, kwargs)
+        matching = [x for x in kwargs.keys() if exists(x)]
 
         cmd = "SELECT %(_fieldlist)s FROM %(_tablename)s" % {
             '_fieldlist': ", ".join(fields),
             '_tablename': cls.__name__.lower(),
         }
-        if len(matching) > 0:
+        if len(matching)>0:
             cmd += " WHERE "
             cmd += " and ". join("%s = :%s" % (f, f) for f in matching)
         values = {}
         for f in matching:
             values[f] = kwargs.get(f)
         db.execute(cmd, values)
-        result =[]
+        result = []
         for row in db:
             i = 0
             tmp = {}
