@@ -142,7 +142,7 @@ def newRD(RDOwn, ratingOwn, ratingList, RDList):
     """
     d2 = dSquared(ratingOwn, ratingList, RDList)
     rd2 = RDOwn*RDOwn
-    result = math.sqrt(1.0/((1.0/(r2) + (1.0/d2))))
+    result = math.sqrt(1.0/((1.0/(rd2) + (1.0/d2))))
 
     return result
 
