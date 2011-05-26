@@ -43,10 +43,14 @@ class Model(object):
         if self.pk() and self.__meta__['fields'][self.pk()].value:
             cmd = "UPDATE %s SET " % self.__meta__['name']
             # a=:a, b=:b, c=:c
+
             # [x+x for x in [1,2,3,4] if x % 2 == 0]
+            # [4,8]
+
             #cmd += ", ". join("%s = :%s" % (f, f)
             #    for f in self.__meta__['fields'].keys() if
             #        self.__meta__['pk'] != f)
+
             def t(x):
                 return self.__meta__['pk'] != x
 
