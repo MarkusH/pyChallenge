@@ -1,22 +1,24 @@
-# computes Glicko rating a player
-# Glicko requires a list of information from all played matches
-# during a rating period
-# the length of a rating period depends on the game
-# e.g.: one month
-#
-# player data:  rating  (initial 1500)
-#               RD      level of certainty (initial 350) (Ratings Deviation)
-#               t       most recent rating period (>=1)
-#
-# constants:    q = (ln 10)/400 = 0.0057565
-#               c - uncertainty over time (choosen for each game)
-#
-# outcome:      0   -> player loses
-#               0.5 -> player draws
-#               1   -> player wins
+"""
+computes Glicko rating a player
+Glicko requires a list of information from all played matches
+during a rating period
+the length of a rating period depends on the game
+e.g.: one month
+
+player data:  rating  (initial 1500)
+              RD      level of certainty (initial 350) (Ratings Deviation)
+              t       most recent rating period (>= 1)
+
+constants:    q = (ln 10) / 400 = 0.0057565
+              c - uncertainty over time (choosen for each game)
+
+outcome:      0   -> player loses
+              0.5 -> player draws
+              1   -> player wins
+"""
 import math
 
-#: glicko constant ( q = (ln 10)/400 = 0.0057565 )
+#: glicko constant ( q = (ln 10) / 400 = 0.0057565 )
 q = 0.0057565
 
 def getCurrentRD(RD, c, t):
@@ -35,11 +37,11 @@ def getCurrentRD(RD, c, t):
     :type t:
     :return:
     """
-    rd2 = RD*RD
-    c2 = c*c*t
+    rd2 = RD * RD
+    c2 = c * c * t
     currentRD = math.sqrt(rd2 + c2)
 
-    return currentRD if courrentRD < 350.0 else 350.0
+    return currentRD if currentRD < 350.0 else 350.0
 
 def g(RD):
     """
@@ -48,10 +50,10 @@ def g(RD):
     :param RD: level of certainty (maximum 350) (Ratings Deviation)
     :return:
     """
-    q2 = 3.0*q*q*RD*RD
-    pi2 = math.pi*math.pi
+    q2 = 3.0 * q * q * RD * RD
+    pi2 = math.pi * math.pi
 
-    return (math.sqrt(1.0+(q2/pi2)))**-1
+    return (math.sqrt(1.0 + (q2 / pi2)))**-1
 
 def expectation(ratingOwn, ratingPlayer2, RDPlayer2):
     """
@@ -65,9 +67,9 @@ def expectation(ratingOwn, ratingPlayer2, RDPlayer2):
     :type RDPlayer2:
     :return: expected result for a match
     """
-    exponent = (-1.0*g(RDPlayer2)*(ratingOwn-ratingPlayer2))/400.0
+    exponent = (-1.0 * g(RDPlayer2) * (ratingOwn - ratingPlayer2)) / 400.0
 
-    return 1/(1.0 + (10.0**exponent))
+    return 1 / (1.0 + (10.0**exponent))
 
 def dSquared(ratingOwn, ratingList, RDList):
     """
@@ -84,12 +86,12 @@ def dSquared(ratingOwn, ratingList, RDList):
     assert ratingList and RDList and len(ratingList) == len(RDList)
     sum = 0.0
     for RD in RDList:
-        g2 = g(RD)*g(RD)
+        g2 = g(RD) * g(RD)
         e = expectation(ratingOwn, ratingList[RDList.index(RD)], RD)
-        sum += g2*e*(1.0-e)
+        sum += g2 * e * (1.0 - e)
 
-    sum = q*q*sum
-    result = 1.0/sum
+    sum = q * q * sum
+    result = 1.0 / sum
 
     return result
 
@@ -115,14 +117,14 @@ def newRating(RDOwn, ratingOwn, ratingList, RDList, outcomeList):
 
     d2 = dSquared(ratingOwn, ratingList, RDList)
 
-    factor = q/((1.0/(RDOwn**2.0))+(1.0/d2))
+    factor = q / ((1.0 / (RDOwn**2.0)) + (1.0 / d2))
 
     sum = 0.0
     for RD in RDList:
         e = expectation(ratingOwn, ratingList[RDList.index(RD)], RD)
-        sum += g(RD)*(outcomeList[RDList.index(RD)] - e)
+        sum += g(RD) * (outcomeList[RDList.index(RD)] - e)
 
-    result = ratingOwn + (factor*sum)
+    result = ratingOwn + (factor * sum)
 
     return result
 
@@ -141,8 +143,8 @@ def newRD(RDOwn, ratingOwn, ratingList, RDList):
     :return:
     """
     d2 = dSquared(ratingOwn, ratingList, RDList)
-    rd2 = RDOwn*RDOwn
-    result = math.sqrt(1.0/((1.0/(rd2) + (1.0/d2))))
+    rd2 = RDOwn * RDOwn
+    result = math.sqrt(1.0 / ((1.0 / (rd2) + (1.0 / d2))))
 
     return result
 
