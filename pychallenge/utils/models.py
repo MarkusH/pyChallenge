@@ -44,9 +44,18 @@ class Model(object):
             cmd = "UPDATE %(_tablename)s SET " % {
                 '_tablename': self.__meta__['name']
             }
-            cmd += ", ". join("%s = :%s" % (f, f)
-                for f in self.__meta__['fields'].keys() if
-                    self.__meta__['pk'] != f)
+            #cmd += ", ". join("%s = :%s" % (f, f)
+            #    for f in self.__meta__['fields'].keys() if
+            #        self.__meta__['pk'] != f)
+            def t(x):
+                return self.__meta__['pk'] != x
+
+            def j(x):
+                return ", ". join("%s = :%s" % (f, f))
+
+            cmd += map(j, filter(t, self.__meta__['fields'].keys()))
+
+
             cmd += " WHERE %s = :%s" % (self.__meta__['pk'],
                 self.__meta__['pk'])
         else:
@@ -74,7 +83,7 @@ class Model(object):
         """
         fields = [f for f, t in cls.__dict__.items() if isinstance(t, Field)]
 
-        exists = lambda x: x in fields 
+        exists = lambda x: x in fields
 
         matching = filter(exists, kwargs)
 
