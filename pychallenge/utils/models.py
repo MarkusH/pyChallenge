@@ -7,8 +7,6 @@ class Model(object):
     This is the general Model class. All Models inherit from this one
     """
 
-    id = PK()
-
     def __init__(self, **kwargs):
         """
         This initializes a new model object.
@@ -19,6 +17,7 @@ class Model(object):
         self.__meta__ = {}
         self.__meta__['fields'] = {}
         self.__meta__['name'] = self.__class__.__name__.lower()
+        self.__meta__['pk'] = None
         for fname, ftype in self.__class__.__dict__.items():
             if isinstance(ftype, Field):
                 # We need :py:func:`copy.copy` here, since ``ftype`` is the
@@ -30,6 +29,7 @@ class Model(object):
                     self.__meta__['pk'] = fname
 
 
+    @property
     def pk(self):
         """
         :return: None if there is no PK, else the name of the PK-field
@@ -39,22 +39,24 @@ class Model(object):
 
     def save(self, commit=True):
         """
+        Calling the save methode will store the object in the databse.
+
         :param commit: If true, each change will direct affect the database
         :type commit: Boolean
         """
-        if self.pk() and self.__meta__['fields'][self.pk()].value:
+        if self.pk and self.__meta__['fields'][self.pk].value:
             cmd = "UPDATE %s SET " % self.__meta__['name']
 
             def match(x):
                 """
                 Helper function to create update statement - check for NOT
-                :py:func:`pychallenge.utils.models.Model.pk()`
+                :py:func:`pychallenge.utils.models.Model.pk`
 
                 :param x: fieldname
                 :type x: String
                 :return: True if `x` is not the models pk
                 """
-                return self.__meta__['pk'] != x
+                return self.pk != x
 
             def format(x):
                 """
@@ -97,7 +99,25 @@ class Model(object):
         db.execute(cmd, values)
         if commit:
             connection.commit()
-        self.__meta__['fields'][self.pk()].set_value(db.lastrowid)
+        self.__meta__['fields'][self.pk].set_value(db.lastrowid)
+
+
+    def delete(self, commit=True):
+        """
+        Calling this method will remove the object from the database. However,
+        any variable instances refering this object can still access it.
+
+        :param commit: If true, each change will direct affect the database
+        :type commit: Boolean
+        """
+        if self.pk and self.__meta__['fields'][self.pk].value:
+            cmd = "DELETE FROM %(_tablename)s WHERE %(_pk)s = :%(_pk)s" % {
+                '_tablename': self.__meta__['name'],
+                '_pk': self.pk,
+            }
+            db.execute(cmd, {self.pk: self.__meta__['fields'][self.pk].value})
+            if commit:
+                connection.commit()
 
 
     @classmethod
@@ -202,11 +222,10 @@ class Model(object):
         else:
             super(Model, self).__setattr__(name, value)
 
-    
     def __repr__(self):
         """
         :return: Returns a readable and unambigious representation of a modal
         instance
         """
         return "<%s pk=%s>" % (self.__meta__['name'], 
-                self.__meta__['fields'][self.pk()].value)
+                self.__meta__['fields'][self.pk].value)
