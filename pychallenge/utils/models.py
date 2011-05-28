@@ -29,11 +29,13 @@ class Model(object):
                 if isinstance(new_field, PK):
                     self.__meta__['pk'] = fname
 
+
     def pk(self):
         """
         :return: None if there is no PK, else the name of the PK-field
         """
         return self.__meta__['pk']
+
 
     def save(self, commit=True):
         """
@@ -97,8 +99,9 @@ class Model(object):
             connection.commit()
         self.__meta__['fields'][self.pk()].set_value(db.lastrowid)
 
+
     @classmethod
-    def get(cls, **kwargs):
+    def query(cls, **kwargs):
         """
         :return: list of instances matching the given attributes
         """
@@ -126,8 +129,27 @@ class Model(object):
             while i < len(row):
                 tmp[fields[i]] = row[i]
                 i += 1
-            result.append(copy.copy(tmp))
+            instance = cls(**tmp)
+            result.append(copy.copy(instance))
         return result if len(result) > 0 else None
+
+
+    @classmethod
+    def get(cls, **kwargs):
+        """
+        :return: returns a sigle instances of the model or None if there is no
+        object matching the pattern
+        If more that one object matches the pattern an exception is raised
+        """
+        q = cls.query(**kwargs)
+        if q:
+            if len(q) > 1:
+                raise Exception("More than 1 (%d) objects for %s returned." %
+                    (len(q), cls.__name__))
+            else:
+                return q[0]
+        else:
+            return None
 
 
     def _set_meta_field(self, name, value=None, instance=None):
@@ -149,6 +171,7 @@ class Model(object):
         else:
             self.__meta__['fields'][name].value = value
 
+
     def _get_meta_field(self, name):
         """
         :param name: The name of the referred field
@@ -160,6 +183,7 @@ class Model(object):
             raise AttributeError("The field %s does not exists in model %s" %
                 (name, self.__meta__['name']))
         return self.__meta__['fields'].get(name)
+
 
     def __setattr__(self, name, value):
         """
@@ -177,3 +201,12 @@ class Model(object):
                 self.__dict__[name] = value
         else:
             super(Model, self).__setattr__(name, value)
+
+    
+    def __repr__(self):
+        """
+        :return: Returns a readable and unambigious representation of a modal
+        instance
+        """
+        return "<%s pk=%s>" % (self.__meta__['name'], 
+                self.__meta__['fields'][self.pk()].value)
