@@ -42,19 +42,40 @@ class Model(object):
         """
         if self.pk() and self.__meta__['fields'][self.pk()].value:
             cmd = "UPDATE %s SET " % self.__meta__['name']
-            # a=:a, b=:b, c=:c
-            # [x+x for x in [1,2,3,4] if x % 2 == 0]
-            #cmd += ", ". join("%s = :%s" % (f, f)
-            #    for f in self.__meta__['fields'].keys() if
-            #        self.__meta__['pk'] != f)
-            def t(x):
+
+            def match(x):
+                """
+                Helper function to create update statement - check for NOT
+                :py:func:`pychallenge.utils.models.Model.pk()`
+
+                :param x: fieldname
+                :type x: String
+                :return: True if `x` is not the models pk
+                """
                 return self.__meta__['pk'] != x
 
-            def j(x):
-                return ", ". join("%s = :%s" % (f, f))
+            def format(x):
+                """
+                Helper function to create update statement - format the sql
+                assignments
 
-            cmd += map(j, filter(t, self.__meta__['fields'].keys()))
+                :param x: fieldname
+                :type x: String
+                :return: Returns a formatted string for the given fieldname
+                """
+                return "%s = :%s" % (x, x)
+            
+            cmd += ", ".join(map(format, filter(match,
+                                    self.__meta__['fields'].keys())))
+            """
+            The following line builds the assignment part of the SQL
+            statement::
+                
+                a = :a, b = :b, c = :c, ....
 
+            When calling :py:func:`pychallenge.utils.models.db.execute()` make
+            sure to name the keys of the dictionary regarding the fieldname
+            """
 
             cmd += " WHERE %s = :%s" % (self.__meta__['pk'],
                 self.__meta__['pk'])
