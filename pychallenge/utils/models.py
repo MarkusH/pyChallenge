@@ -157,9 +157,9 @@ class Model(object):
     @classmethod
     def get(cls, **kwargs):
         """
-        :return: returns a sigle instances of the model or None if there is no
-        object matching the pattern
-        If more that one object matches the pattern an exception is raised
+        :return: returns a sigle instances of the model or None if there is\
+                no object matching the pattern If more that one object matches\
+                the pattern an exception is raised
         """
         q = cls.query(**kwargs)
         if q:
@@ -224,8 +224,8 @@ class Model(object):
 
     def __repr__(self):
         """
-        :return: Returns a readable and unambigious representation of a modal
-        instance
+        :return: Returns a readable and unambigious representation of a modal\
+                instance
         """
         return "<%s pk=%s>" % (self.__meta__['name'], 
-                self.__meta__['fields'][self.pk].value)
+            self.__meta__['fields'][self.pk].value)
