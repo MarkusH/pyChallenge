@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 
-import pychallenge
 from pychallenge.models import Algorithm
 
 if __name__ == "__main__":
-    a = Algorithm(name='test',description='test', algorithm_type_id=11)
-    b = Algorithm(name='bar_name',description='bar_desc', algorithm_type_id=21)
+    a = Algorithm(name='test', description='test', algorithm_type_id=11)
+    b = Algorithm(name='bar_name', description='bar_desc',
+            algorithm_type_id=21)
     a.save()
     b.save()
-    b.name= 'bar_name2'
+    b.name = 'bar_name2'
     b.description = 'bar_desc2'
     b.algorithm_type_id = 22
     b.save()

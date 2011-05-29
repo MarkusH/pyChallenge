@@ -21,6 +21,7 @@ import math
 #: glicko constant ( q = (ln 10) / 400 = 0.0057565 )
 q = 0.0057565
 
+
 def getCurrentRD(RD, c, t):
     """
     Glicko takes the time a player hasn't played into consideration
@@ -43,6 +44,7 @@ def getCurrentRD(RD, c, t):
 
     return currentRD if currentRD < 350.0 else 350.0
 
+
 def g(RD):
     """
     Glicko helper function
@@ -53,7 +55,8 @@ def g(RD):
     q2 = 3.0 * q * q * RD * RD
     pi2 = math.pi * math.pi
 
-    return (math.sqrt(1.0 + (q2 / pi2)))**-1
+    return (math.sqrt(1.0 + (q2 / pi2))) ** -1
+
 
 def expectation(ratingOwn, ratingPlayer2, RDPlayer2):
     """
@@ -69,7 +72,8 @@ def expectation(ratingOwn, ratingPlayer2, RDPlayer2):
     """
     exponent = (-1.0 * g(RDPlayer2) * (ratingOwn - ratingPlayer2)) / 400.0
 
-    return 1 / (1.0 + (10.0**exponent))
+    return 1 / (1.0 + (10.0 ** exponent))
+
 
 def dSquared(ratingOwn, ratingList, RDList):
     """
@@ -95,6 +99,7 @@ def dSquared(ratingOwn, ratingList, RDList):
 
     return result
 
+
 def newRating(RDOwn, ratingOwn, ratingList, RDList, outcomeList):
     """
     after a match this returns the new rating
@@ -117,7 +122,7 @@ def newRating(RDOwn, ratingOwn, ratingList, RDList, outcomeList):
 
     d2 = dSquared(ratingOwn, ratingList, RDList)
 
-    factor = q / ((1.0 / (RDOwn**2.0)) + (1.0 / d2))
+    factor = q / ((1.0 / (RDOwn ** 2.0)) + (1.0 / d2))
 
     sum = 0.0
     for RD in RDList:
@@ -127,6 +132,7 @@ def newRating(RDOwn, ratingOwn, ratingList, RDList, outcomeList):
     result = ratingOwn + (factor * sum)
 
     return result
+
 
 def newRD(RDOwn, ratingOwn, ratingList, RDList):
     """
@@ -147,4 +153,3 @@ def newRD(RDOwn, ratingOwn, ratingList, RDList):
     result = math.sqrt(1.0 / ((1.0 / (rd2) + (1.0 / d2))))
 
     return result
-

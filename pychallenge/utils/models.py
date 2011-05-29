@@ -2,6 +2,7 @@ import copy
 from pychallenge.utils.db import db, connection
 from pychallenge.utils.fields import Field, Numeric, Text, PK, FK
 
+
 class Model(object):
     """
     This is the general Model class. All Models inherit from this one
@@ -28,14 +29,12 @@ class Model(object):
                 if isinstance(new_field, PK):
                     self.__meta__['pk'] = fname
 
-
     @property
     def pk(self):
         """
         :return: None if there is no PK, else the name of the PK-field
         """
         return self.__meta__['pk']
-
 
     def save(self, commit=True):
         """
@@ -68,13 +67,13 @@ class Model(object):
                 :return: Returns a formatted string for the given fieldname
                 """
                 return "%s = :%s" % (x, x)
-            
+
             cmd += ", ".join(map(format, filter(match,
                                     self.__meta__['fields'].keys())))
             """
             The following line builds the assignment part of the SQL
             statement::
-                
+
                 a = :a, b = :b, c = :c, ....
 
             When calling :py:func:`pychallenge.utils.models.db.execute()` make
@@ -92,7 +91,7 @@ class Model(object):
             fl = ", ".join(flist)
             fl2 = ", ".join(flist2)
             cmd = "INSERT INTO %(_tablename)s (%(fl)s) VALUES (%(fl2)s)" % {
-                '_tablename': self.__meta__['name'], 'fl':fl, 'fl2':fl2}
+                '_tablename': self.__meta__['name'], 'fl': fl, 'fl2': fl2}
         values = {}
         for f, t in self.__meta__['fields'].items():
             values[f] = t.value
@@ -100,7 +99,6 @@ class Model(object):
         if commit:
             connection.commit()
         self.__meta__['fields'][self.pk].set_value(db.lastrowid)
-
 
     def delete(self, commit=True):
         """
@@ -118,7 +116,6 @@ class Model(object):
             db.execute(cmd, {self.pk: self.__meta__['fields'][self.pk].value})
             if commit:
                 connection.commit()
-
 
     @classmethod
     def query(cls, **kwargs):
@@ -153,7 +150,6 @@ class Model(object):
             result.append(copy.copy(instance))
         return result if len(result) > 0 else None
 
-
     @classmethod
     def get(cls, **kwargs):
         """
@@ -171,12 +167,12 @@ class Model(object):
         else:
             return None
 
-
     def _set_meta_field(self, name, value=None, instance=None):
         """
         :param name: This is the name of a field
         :param value: The value that will be assigned to the field
-        :param instance: This attribute is used for adding a new field to the model
+        :param instance: This attribute is used for adding a new field to the
+            model
         :type name: String
         :type value: variable
         :type instance: :py:class:`pychallenge.utils.fields.Field`
@@ -184,13 +180,12 @@ class Model(object):
         assert bool(value) ^ bool(instance)
 
         if not (instance or name in self.__meta__['fields']):
-            raise AttributeError('The field "%s" does not exists in model "%s"' %
+            raise AttributeError('Field "%s" does not exists in model "%s"' %
                 (name, self.__meta__['name']))
         if instance:
             self.__meta__['fields'][name] = instance
         else:
             self.__meta__['fields'][name].value = value
-
 
     def _get_meta_field(self, name):
         """
@@ -203,7 +198,6 @@ class Model(object):
             raise AttributeError("The field %s does not exists in model %s" %
                 (name, self.__meta__['name']))
         return self.__meta__['fields'].get(name)
-
 
     def __setattr__(self, name, value):
         """
@@ -227,5 +221,5 @@ class Model(object):
         :return: Returns a readable and unambigious representation of a modal\
                 instance
         """
-        return "<%s pk=%s>" % (self.__meta__['name'], 
+        return "<%s pk=%s>" % (self.__meta__['name'],
             self.__meta__['fields'][self.pk].value)

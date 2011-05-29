@@ -1,5 +1,6 @@
 from pychallenge.utils import models
 
+
 class Algorithm(models.Model):
     algorithm_id = models.PK()
     name = models.Text()
