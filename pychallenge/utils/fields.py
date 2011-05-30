@@ -47,7 +47,16 @@ class Numeric(Field):
     """
     This field class matches the SQLite field type "NUMERIC"
     """
-    pass
+    def clean(self, value):
+        """
+        :param value: clean `value`
+        :type value: variable
+        :return: cleans up the value and returns the cleaned data
+        """
+        try:
+            return float(value)
+        except ValueError:
+            return 0
 
 class Text(Field):
     """
@@ -74,4 +83,14 @@ class FK(Numeric):
         """
         self.ref_table = ref_table
         self.value = self.clean(value)
+    def clean(self, value):
+        """
+        :param value: clean `value`
+        :type value: variable
+        :return: cleans up the value and return the cleaned data
+        """
+        try:
+            return int(value)
+        except ValueError:
+            return 0
 
