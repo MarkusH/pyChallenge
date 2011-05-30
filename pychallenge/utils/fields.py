@@ -40,8 +40,8 @@ class Field():
         """
         return '<%s "%s">' % (
             str(self.__class__.__name__),
-            (self.value)
-        )
+            (self.value))
+
 
 class Numeric(Field):
     """
@@ -58,17 +58,20 @@ class Numeric(Field):
         except ValueError:
             return 0
 
+
 class Text(Field):
     """
     This field class matches the SQLite field type "TEXT"
     """
     pass
 
+
 class PK(Field):
     """
     This field class matches the SQLite field type "INTEGER PRIMARY KEY"
     """
     pass
+
 
 class FK(Numeric):
     """
@@ -83,6 +86,7 @@ class FK(Numeric):
         """
         self.ref_table = ref_table
         self.value = self.clean(value)
+
     def clean(self, value):
         """
         :param value: clean `value`
@@ -93,4 +97,3 @@ class FK(Numeric):
             return int(value)
         except ValueError:
             return 0
-

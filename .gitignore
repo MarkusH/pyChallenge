@@ -1,5 +1,5 @@
 docs/build
-data.db
+*.db
 .*
 *.pyc
 pychallenge/usersettings.py

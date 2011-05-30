@@ -8,6 +8,7 @@ SETTINGS = {
     'DEBUG': False,
 }
 
+
 def load_settings():
     """
     :func:`load_settings` initializes the default settings and reads
