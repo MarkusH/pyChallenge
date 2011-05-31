@@ -70,7 +70,16 @@ class PK(Field):
     """
     This field class matches the SQLite field type "INTEGER PRIMARY KEY"
     """
-    pass
+    def clean(self, value):
+        """
+        :param value: clean `value`
+        :type value: variable
+        :return: cleans up the value and returns the cleaned data
+        """
+        try:
+            return int(value)
+        except ValueError:
+            return 0
 
 
 class FK(Numeric):
@@ -91,7 +100,7 @@ class FK(Numeric):
         """
         :param value: clean `value`
         :type value: variable
-        :return: cleans up the value and return the cleaned data
+        :return: cleans up the value and returns the cleaned data
         """
         try:
             return int(value)
