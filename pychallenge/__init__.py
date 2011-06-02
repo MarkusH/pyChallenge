@@ -5,7 +5,6 @@
 __version__ = (0, 1, 'pre-alpha')
 __authors__ = ['fbausch', 'markusd', 'Markus Holtermann', 'rwaury']
 
-import pychallenge.utils.settings as settings
 
 def get_version():
     """

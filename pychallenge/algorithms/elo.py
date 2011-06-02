@@ -23,7 +23,7 @@ def elo1on1(elo1, elo2, outcome, k, function):
 
     expected = function(eloDiff)
 
-    newelo1 = elo1 + k*(outcome - expected)
+    newelo1 = elo1 + k * (outcome - expected)
 
     newelo1 = round(newelo1)
     newelo2 = elo2 - (newelo1 - elo1)

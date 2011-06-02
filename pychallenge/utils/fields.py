@@ -40,14 +40,24 @@ class Field():
         """
         return '<%s "%s">' % (
             str(self.__class__.__name__),
-            (self.value)
-        )
+            (self.value))
+
 
 class Numeric(Field):
     """
     This field class matches the SQLite field type "NUMERIC"
     """
-    pass
+    def clean(self, value):
+        """
+        :param value: clean `value`
+        :type value: variable
+        :return: cleans up the value and returns the cleaned data
+        """
+        try:
+            return float(value)
+        except ValueError:
+            return 0
+
 
 class Text(Field):
     """
@@ -55,11 +65,22 @@ class Text(Field):
     """
     pass
 
+
 class PK(Field):
     """
     This field class matches the SQLite field type "INTEGER PRIMARY KEY"
     """
-    pass
+    def clean(self, value):
+        """
+        :param value: clean `value`
+        :type value: variable
+        :return: cleans up the value and returns the cleaned data
+        """
+        try:
+            return int(value)
+        except ValueError:
+            return 0
+
 
 class FK(Numeric):
     """
@@ -75,3 +96,13 @@ class FK(Numeric):
         self.ref_table = ref_table
         self.value = self.clean(value)
 
+    def clean(self, value):
+        """
+        :param value: clean `value`
+        :type value: variable
+        :return: cleans up the value and returns the cleaned data
+        """
+        try:
+            return int(value)
+        except ValueError:
+            return 0

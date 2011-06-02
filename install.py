@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-import pychallenge
 from pychallenge.utils.db import db
 
 if __name__ == "__main__":

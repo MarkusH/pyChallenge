@@ -2,12 +2,11 @@ import copy
 from pychallenge.utils.db import db, connection
 from pychallenge.utils.fields import Field, Numeric, Text, PK, FK
 
+
 class Model(object):
     """
     This is the general Model class. All Models inherit from this one
     """
-
-    id = PK()
 
     def __init__(self, **kwargs):
         """
@@ -19,6 +18,7 @@ class Model(object):
         self.__meta__ = {}
         self.__meta__['fields'] = {}
         self.__meta__['name'] = self.__class__.__name__.lower()
+        self.__meta__['pk'] = None
         for fname, ftype in self.__class__.__dict__.items():
             if isinstance(ftype, Field):
                 # We need :py:func:`copy.copy` here, since ``ftype`` is the
@@ -29,6 +29,7 @@ class Model(object):
                 if isinstance(new_field, PK):
                     self.__meta__['pk'] = fname
 
+    @property
     def pk(self):
         """
         :return: None if there is no PK, else the name of the PK-field
@@ -37,28 +38,47 @@ class Model(object):
 
     def save(self, commit=True):
         """
+        Calling the save methode will store the object in the databse.
+
         :param commit: If true, each change will direct affect the database
         :type commit: Boolean
         """
-        if self.pk() and self.__meta__['fields'][self.pk()].value:
+        if self.pk and self.__meta__['fields'][self.pk].value:
             cmd = "UPDATE %s SET " % self.__meta__['name']
-            # a=:a, b=:b, c=:c
 
-            # [x+x for x in [1,2,3,4] if x % 2 == 0]
-            # [4,8]
+            def match(x):
+                """
+                Helper function to create update statement - check for NOT
+                :py:func:`pychallenge.utils.models.Model.pk`
 
-            #cmd += ", ". join("%s = :%s" % (f, f)
-            #    for f in self.__meta__['fields'].keys() if
-            #        self.__meta__['pk'] != f)
+                :param x: fieldname
+                :type x: String
+                :return: True if `x` is not the models pk
+                """
+                return self.pk != x
 
-            def t(x):
-                return self.__meta__['pk'] != x
+            def format(x):
+                """
+                Helper function to create update statement - format the sql
+                assignments
 
-            def j(x):
-                return ", ". join("%s = :%s" % (f, f))
+                :param x: fieldname
+                :type x: String
+                :return: Returns a formatted string for the given fieldname
+                """
+                return "%s = :%s" % (x, x)
 
-            cmd += map(j, filter(t, self.__meta__['fields'].keys()))
+            cmd += ", ".join(map(format, filter(match,
+                                    self.__meta__['fields'].keys())))
+            """
+            The following line builds the assignment part of the SQL
+            statement::
 
+                a = :a, b = :b, c = :c, ....
+
+            When calling :py:func:`pychallenge.utils.models.db.execute()` make
+            sure to name the keys of the dictionary regarding the fieldname
+            """
 
             cmd += " WHERE %s = :%s" % (self.__meta__['pk'],
                 self.__meta__['pk'])
@@ -71,17 +91,34 @@ class Model(object):
             fl = ", ".join(flist)
             fl2 = ", ".join(flist2)
             cmd = "INSERT INTO %(_tablename)s (%(fl)s) VALUES (%(fl2)s)" % {
-                '_tablename': self.__meta__['name'], 'fl':fl, 'fl2':fl2}
+                '_tablename': self.__meta__['name'], 'fl': fl, 'fl2': fl2}
         values = {}
         for f, t in self.__meta__['fields'].items():
             values[f] = t.value
         db.execute(cmd, values)
         if commit:
             connection.commit()
-        self.__meta__['fields'][self.pk()].set_value(db.lastrowid)
+        self.__meta__['fields'][self.pk].set_value(db.lastrowid)
+
+    def delete(self, commit=True):
+        """
+        Calling this method will remove the object from the database. However,
+        any variable instances refering this object can still access it.
+
+        :param commit: If true, each change will direct affect the database
+        :type commit: Boolean
+        """
+        if self.pk and self.__meta__['fields'][self.pk].value:
+            cmd = "DELETE FROM %(_tablename)s WHERE %(_pk)s = :%(_pk)s" % {
+                '_tablename': self.__meta__['name'],
+                '_pk': self.pk,
+            }
+            db.execute(cmd, {self.pk: self.__meta__['fields'][self.pk].value})
+            if commit:
+                connection.commit()
 
     @classmethod
-    def get(cls, **kwargs):
+    def query(cls, **kwargs):
         """
         :return: list of instances matching the given attributes
         """
@@ -109,15 +146,33 @@ class Model(object):
             while i < len(row):
                 tmp[fields[i]] = row[i]
                 i += 1
-            result.append(copy.copy(tmp))
+            instance = cls(**tmp)
+            result.append(copy.copy(instance))
         return result if len(result) > 0 else None
 
+    @classmethod
+    def get(cls, **kwargs):
+        """
+        :return: returns a sigle instances of the model or None if there is\
+                no object matching the pattern If more that one object matches\
+                the pattern an exception is raised
+        """
+        q = cls.query(**kwargs)
+        if q:
+            if len(q) > 1:
+                raise Exception("More than 1 (%d) objects for %s returned." %
+                    (len(q), cls.__name__))
+            else:
+                return q[0]
+        else:
+            return None
 
     def _set_meta_field(self, name, value=None, instance=None):
         """
         :param name: This is the name of a field
         :param value: The value that will be assigned to the field
-        :param instance: This attribute is used for adding a new field to the model
+        :param instance: This attribute is used for adding a new field to the
+            model
         :type name: String
         :type value: variable
         :type instance: :py:class:`pychallenge.utils.fields.Field`
@@ -125,7 +180,7 @@ class Model(object):
         assert bool(value) ^ bool(instance)
 
         if not (instance or name in self.__meta__['fields']):
-            raise AttributeError('The field "%s" does not exists in model "%s"' %
+            raise AttributeError('Field "%s" does not exists in model "%s"' %
                 (name, self.__meta__['name']))
         if instance:
             self.__meta__['fields'][name] = instance
@@ -160,3 +215,11 @@ class Model(object):
                 self.__dict__[name] = value
         else:
             super(Model, self).__setattr__(name, value)
+
+    def __repr__(self):
+        """
+        :return: Returns a readable and unambigious representation of a modal\
+                instance
+        """
+        return "<%s pk=%s>" % (self.__meta__['name'],
+            self.__meta__['fields'][self.pk].value)
