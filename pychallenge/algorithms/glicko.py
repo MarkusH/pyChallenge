@@ -32,10 +32,11 @@ def getCurrentRD(RD, c, t):
     :param RD: level of certainty (maximum 350) (Ratings Deviation)
     :param c: uncertainty over time (choosen for each game)
     :param t: most recent raing period (>=1)
-    :type RD: Integer
-    :type c:
-    :type t:
-    :return:
+    :type RD: float
+    :type c: float
+    :type t: integer
+    :return: updated player RD that can be used for new matches
+    :rtype: float
     """
     rd2 = RD * RD
     c2 = c * c * t
@@ -48,38 +49,42 @@ def g(RD):
     Glicko helper function
 
     :param RD: level of certainty (maximum 350) (Ratings Deviation)
-    :return:
+    :type RD: float
+    :return: intermediate result
+    :rtype: float
     """
     q2 = 3.0 * q * q * RD * RD
     pi2 = math.pi * math.pi
 
     return (math.sqrt(1.0 + (q2 / pi2)))**-1
 
-def expectation(ratingOwn, ratingPlayer2, RDPlayer2):
+def expectation(ratingOwn, ratingOpponent, RDOpponent):
     """
     This calculates the expected match result
 
-    :param ratingOwn:
-    :param ratingPlayer2:
-    :param RDPlayer2:
-    :type ratingOwn:
-    :type ratingPlayer2:
-    :type RDPlayer2:
+    :param ratingOwn: own rating
+    :param ratingOpponent:  rating of the opponent
+    :param RDOpponent: RD of the opponent
+    :type ratingOwn: float
+    :type ratingOpponent: float
+    :type RDOpponent: float
     :return: expected result for a match
+    :rtype: float
     """
-    exponent = (-1.0 * g(RDPlayer2) * (ratingOwn - ratingPlayer2)) / 400.0
+    exponent = (-1.0 * g(RDOpponent) * (ratingOwn - ratingOpponent)) / 400.0
 
     return 1 / (1.0 + (10.0**exponent))
 
 def dSquared(ratingOwn, ratingList, RDList):
     """
     :param ratingOwn: player rating
-    :param ratingList: list of opponents ratings
-    :param RDList: list of opponents RDs
-    :type ratingOwn:
-    :type ratingList:
-    :type RDList:
-    :return:
+    :param ratingList: list of opponents' ratings
+    :param RDList: list of opponents' RDs
+    :type ratingOwn: float
+    :type ratingList: list of floats
+    :type RDList: list of floats
+    :return: intermediate result
+    :rtype: float
     """
 
     #: assert that ratingList and RDList have the same length
@@ -101,16 +106,17 @@ def newRating(RDOwn, ratingOwn, ratingList, RDList, outcomeList):
 
     :param RDOwn: player RD
     :param ratingOwn: player rating
-    :param ratingList: list of opponent ratings
-    :param RDList: list of opponent RDs
+    :param ratingList: list of opponent's ratings
+    :param RDList: list of opponents' RDs
     :param outcomeList: list of match outcomes
-    :type RDOwn:
-    :type ratingOwn:
-    :type ratingList:
-    :type RDList:
-    :type outcomeList:
+    :type RDOwn: float
+    :type ratingOwn: float
+    :type ratingList: list of floats
+    :type RDList: list of floats
+    :type outcomeList: list of floats
+    :return: new rating
+    :rtype: float
     """
-
     #: assert that ratingList and RDList and outcomeList have the same length
     assert ratingList and RDList and outcomeList and \
         len(ratingList) == len(RDList) and len(ratingList) == len(outcomeList)
@@ -134,13 +140,14 @@ def newRD(RDOwn, ratingOwn, ratingList, RDList):
 
     :param RDOwn: player RD
     :param ratingOwn: player rating
-    :param ratingList: list of opponent ratings
-    :param RDList: list of opponent RDs
-    :type RDOwn:
-    :type ratingOwn:
-    :type ratingList:
-    :type RDList:
-    :return:
+    :param ratingList: list of opponents' ratings
+    :param RDList: list of opponents' RDs
+    :type RDOwn: float
+    :type ratingOwn: float
+    :type ratingList: list of floats
+    :type RDList: list of floats
+    :return: updated player RD
+    :rtype: float
     """
     d2 = dSquared(ratingOwn, ratingList, RDList)
     rd2 = RDOwn * RDOwn

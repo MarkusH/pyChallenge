@@ -11,11 +11,13 @@ def elo1on1(elo1, elo2, outcome, k, function):
         * 1: player 1 win
     :param k: k factor (usually depends on players initial Elo rating and game)
     :param function: Elo function e.g. chess lambda x:(1/(1+(10**(x/400.0))))
-    :type elo1: Integer
-    :type elo2: Integer
+    :type elo1: integer
+    :type elo2: integer
     :type outcome: 0, 0.5, 1
-    :type k: Float
+    :type k: float
     :type function: function
+    :return: new rating for the two player
+    :rtype: tuple of integers
     """
     eloDiff = elo2 - elo1
 
