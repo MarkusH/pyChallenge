@@ -2,9 +2,9 @@
 
 import pychallenge
 from pychallenge.models import Algorithm
-from pychallenge.ui import parser
+from pychallenge.ui import parser2
 
-parser.parse()
+parser2.parse()
 
 """
 a = Algorithm(name='foo',description='foo_desc', algorithm_type_id=11)
