@@ -5,15 +5,50 @@ from pychallenge.utils import settings
 connection = sqlite3.connect(settings.SETTINGS['DATABASE'])
 db = connection.cursor()
 
+class KeyTable():
+    
+    def __init__(self):
+        self.keys = {}
+
+    def __repr__(self):
+        return str(self.keys)
+
+    def used(self, name):
+        return name in self.keys.keys()
+
+    def add(self, name, value = None):
+        n = name
+        i = 1
+        while n in self.keys.keys():
+            n = "%s_%d" %(name, i)
+            i = i +1
+        self.keys[n] = value
+        return n
+
+    def __iter__(self):
+        self.index = 0
+        self.length = len(self.keys.keys())
+        return self
+
+    def __next__(self):
+        if self.index < self.length:
+            value = self.keys.items[self.index]
+            self.index += 1
+            return value
+        raise StopIteration
+
+
 class LogicalOperator():
 
-    def __init__(self, query, **kwargs):
+    def __init__(self, **kwargs):
+        self.key_table = KeyTable()
+
         self.expression_list = []
-        for k, v in kwargs.iteritems()
+        for k, v in kwargs.iteritems():
             if k.startswith('_and_') or k.startswith('_or_'):
-                self.expression_list.append(v)
+                self.expression_list.append(str(v))
             else:
-                n = query.key_add(k, v)
+                n = self.key_table.add(k, v)
                 self.expression_list.append('%s = :%s' % (n, n))
 
 
@@ -37,48 +72,65 @@ class Query():
     QTYPE_DELETE = 4
     QTYPE_CREATE = 5
 
-    def __init__(self, qtype, *args, **kwargs):
+    AGGREGATE = ['avg', 'count', 'min', 'max']
+
+    def __init__(self, qtype, modelfields, *args, **kwargs):
         """
 
         """
 
         self.qtype = qtype
-        self.used_keys = {}
+        self.modelfields = modelfields
+        self.modelfields.append('*')
+        self.key_table = KeyTable()
+        self.filter_fields = []
+        self.select_fields = []
 
         if not kwargs.get('table', None):
             raise AttributeError("Missing table definition")
         self.table = kwargs.pop('table')
-
-    def exec():
         if self.qtype == Query.QTYPE_SELECT:
-            return self._select(*args, **kwargs)
+            self._select(*args, **kwargs)
 
         elif self.qtype == Query.QTYPE_INSERT:
-            return self._insert(*args, **kwargs)
+            self._insert(*args, **kwargs)
 
         elif self.qtype == Query.QTYPE_UPDATE:
-            return self._update(*args, **kwargs)
+            self._update(*args, **kwargs)
 
         elif self.qtype == Query.QTYPE_DELETE:
-            return self._delete(*args, **kwargs)
+            self._delete(*args, **kwargs)
 
         elif self.qtype == Query.QTYPE_CREATE:
-            return self._create(*args, **kwargs)
+            self._create(*args, **kwargs)
 
         else:
             raise AttributeError("qtype must be one of QTYPE_SELECT, "
                 "QTYPE_INSERT, QTYPE_UPDATE, QTYPE_DELETE, "
                 "QTYPE_CREATE")
 
+
+    def run(self, dry_run=True):
+        if dry_run:
+            print self.__dict__
+            return
+
+
     def filter(self, **kwargs):
-        pass
+        """
+        """
+        self.filter_fields += self._get_filter_fields(**kwargs)
+        print self.filter_fields
+        return self
+
 
     def _select(self, *args, **kwargs):
         """
 
         """
         flds = kwargs.pop('fields', '*')
-        self.select_fields = self._get_fields(flds, aggregate=True)
+        self.select_fields += self._get_select_fields(flds, aggregate=True)
+        print self.select_fields
 
 
     def _insert(self, *args, **kwargs):
@@ -105,7 +157,36 @@ class Query():
         """
         pass
 
-    def _get_fields(self, fields, aggregate=False):
+    def _get_filter_fields(self, **kwargs):
+        def build(f, id, op):
+            return '%s %s :%s' % (f, op, id)
+
+        op = {
+            'lt': '<',
+            'le': '<=',
+            'eq': '=',
+            'ge': '>=',
+            'gt': '>',
+        }
+        flds = []
+        for f, v in kwargs.iteritems():
+            parts = f.split('__')
+            if len(parts) == 1 and parts[0] in self.modelfields:
+                n = self.key_table.add(name=f, value=v)
+                flds.append(build(f, n, op['eq']))
+            elif len(parts) == 2 and parts[0] in self.modelfields:
+                if parts[1] in op.keys():
+                    n = self.key_table.add(name=f, value=v)
+                    flds.append(build(f, n, op[parts[1]]))
+                else:
+                    raise AttributeError("Operator %s unknown" %
+                        parts[1].upper)
+            else:
+                raise AttributeError("Unknown field %s" % f)
+        return flds
+
+
+    def _get_select_fields(self, fields, aggregate=False, compare=False, **kwargs):
         """
 
         """
@@ -113,29 +194,21 @@ class Query():
             flds = []
             for f in fields:
                 parts = f.split('__')
-                if len(parts) == 1:
+                if len(parts) == 1 and parts[0] in self.modelfields:
                     flds.append(f)
-                elif len(parts) == 2:
-                    if parts[1] in ['avg', 'count', 'min', 'max']:
-                        f_new = parts[1].upper() + '(' + parts[0] + ')'
-                        flds.append(f_new)
+                elif len(parts) == 2 and parts[0] in self.modelfields:
+                    if parts[1] in Query.AGGREGATE:
+                        f_n = parts[1].upper() + '(' + parts[0] + ') AS ' + f
+                        flds.append(f_n)
                     else:
                         raise AttributeError("Aggregate function %s unknown" %
                             parts[1].upper)
                 else:
                     raise AttributeError("Unknown field %s" % f)
-            return flds
-
-        return fields
-
-    def key_used(self, name):
-        return name in self.used_keys
-
-    def key_add(self, name, value = None)
-        n = name
-        i = 1
-        while n in self.used_keys.keys():
-            n = "%s_%d" %(name, i)
-            i = i +1
-        self.used_keys[n] = value
-        return n
+        else:
+            for f in fields:
+                if f in self.modelfields:
+                    flds.append(f)
+                else:
+                    raise AttributeError("Unknown field %s" % f)
+        return flds
