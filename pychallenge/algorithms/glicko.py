@@ -5,16 +5,19 @@ during a rating period
 the length of a rating period depends on the game
 e.g.: one month
 
-player data:  rating  (initial 1500)
-              RD      level of certainty (initial 350) (Ratings Deviation)
-              t       most recent rating period (>= 1)
+player data:
+    * rating: (initial 1500)
+    * RD:     level of certainty (initial 350) (Ratings Deviation)
+    * t:      most recent rating period (>= 1)
 
-constants:    q = (ln 10) / 400 = 0.0057565
-              c - uncertainty over time (choosen for each game)
+constants:
+    * q = (ln 10) / 400 = 0.0057565
+    * c: uncertainty over time (choosen for each game)
 
-outcome:      0   -> player loses
-              0.5 -> player draws
-              1   -> player wins
+outcome:
+    * 0: player 1 lost
+    * 0.5: draw
+    * 1: player 1 win
 """
 import math
 

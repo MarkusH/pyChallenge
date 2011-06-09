@@ -1,22 +1,22 @@
 """
 computes Glicko-2 rating of a player
 
-player data:    rating  (initial 1500)
-                        (from Glicko)
-                RD      level of certainty (initial 350) (Ratings Deviation)
-                        (from Glicko)
-                sigma   player's rating volatility (initial 0.06)
-                mu      rating
-                phi     deviation
+player data:
+    * rating:  (initial 1500) (from Glicko)
+    * RD:      level of certainty (initial 350) (Ratings Deviation) (from Glicko)
+    * sigma:   player's rating volatility (initial 0.06)
+    * mu:      rating
+    * phi:     deviation
 
-constants:      tau - constrains volatility over time (chosen for each game - between 0.3 and 1.2)
-                precision - desired precision
-                RDconst = 173.7178
+constants:
+    * tau:    constrains volatility over time (chosen for each game - between 0.3 and 1.2)
+    * precision:  desired precision
+    * RDconst = 173.7178
 
-outcome:        0   -> player loses
-                0.5 -> player draws
-                1   -> player wins
-
+outcome:
+    * 0: player 1 lost
+    * 0.5: draw
+    * 1: player 1 win
 """
 import math
 

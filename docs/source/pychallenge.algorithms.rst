@@ -29,7 +29,7 @@ algorithms Package
 
 	
 :mod:`glicko2` Module
---------------------
+---------------------
 
 .. automodule:: pychallenge.algorithms.glicko2
     :members:

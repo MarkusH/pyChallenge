@@ -112,7 +112,7 @@ class Query():
         Use `filer` for specifying the `WHERE`-clause of the SQL statement.
         All statements are combined by `AND`.
 
-        :param **kwargs: use the model fields as parameter names and assign
+        :param kwargs: use the model fields as parameter names and assign
             them a value. Additionally you may append `__lt`, `__le`, `__eq`,
             `__ge`, `__gt` to the fieldname for `<`, `<=`, `=`, `>=`, `>`.
             Use `__in` and `__nin` and assign either a `list` or a `tuple` for
