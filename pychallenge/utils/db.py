@@ -37,32 +37,6 @@ class KeyTable():
             return value
         raise StopIteration
 
-"""
-class LogicalOperator():
-
-    def __init__(self, **kwargs):
-        self.key_table = KeyTable()
-
-        self.expression_list = []
-        for k, v in kwargs.iteritems():
-            if k.startswith('_and_') or k.startswith('_or_'):
-                self.expression_list.append(str(v))
-            else:
-                n = self.key_table.add(k, v)
-                self.expression_list.append('%s = :%s' % (n, n))
-
-
-class And(LogicalOperator):
-
-    def __repr__(self):
-        return " (" + " AND ".join(self.expression_list) + ") "
-
-
-class Or(LogicalOperator):
-
-    def __repr__(self):
-        return " (" + " OR ".join(self.expression_list) + ") "
-"""
 
 class Query():
 
@@ -111,16 +85,71 @@ class Query():
 
 
     def run(self, dry_run=True):
+        if self.qtype == Query.QTYPE_SELECT:
+            statement = "SELECT %(_fields)s FROM %(_table)s"
+            replace = {
+                '_fields': ", ".join(self.select_fields),
+                '_table': self.table,
+            }
+            if self.filter_fields:
+                self.join_and()
+                statement += " WHERE %(_filter)s"
+                replace['_filter'] = self.filter_fields[0]
+
         if dry_run:
-            print self.__dict__
-            return
+            print statement % replace
+            if settings.SETTINGS['DEBUG']:
+                print self.key_table
+            return None
+        elif settings.SETTINGS['DEBUG']:
+            print statement % replace
+            print self.key_table
+        return statement
 
 
     def filter(self, **kwargs):
         """
+        Use `filer` for specifying the `WHERE`-clause of the SQL statement.
+        All statements are combined by `AND`.
+
+        :param **kwargs: use the model fields as parameter names and assign
+            them a value. Additionally you may append `__lt`, `__le`, `__eq`,
+            `__ge`, `__gt` to the fieldname for `<`, `<=`, `=`, `>=`, `>`.
+            Use `__in` and `__nin` and assign either a `list` or a `tuple` for
+            `IN` or `NOT IN`.
         """
-        self.filter_fields += self._get_filter_fields(**kwargs)
-        print self.filter_fields
+        tmp = "(" + " AND ".join(self._get_filter_fields(**kwargs)) + ")"
+        self.filter_fields.append(tmp)
+        return self
+
+
+    def filter_or(self, **kwargs):
+        """
+        See :py:func:`pychallenge.utils.db.Query.filter`.
+        The only difference is the combination `OR`.
+        """
+        tmp = "(" + " OR ".join(self._get_filter_fields(**kwargs)) + ")"
+        self.filter_fields.append(tmp)
+        return self
+
+
+    def join_and(self):
+        """
+        use this function to concat filter expressions with *AND*
+        """
+        if len(self.filter_fields) > 1:
+            tmp = "(" + " AND ".join(self.filter_fields) + ")"
+            self.filter_fields = [tmp]
+        return self
+
+
+    def join_or(self):
+        """
+        use this function to concat filter expressions with *OR*
+        """
+        if len(self.filter_fields) > 1:
+            tmp = "(" + " OR ".join(self.filter_fields) + ")"
+            self.filter_fields = [tmp]
         return self
 
 
@@ -136,8 +165,6 @@ class Query():
             tmp[e] = 1
         self.select_fields = tmp.keys()
         
-        print self.select_fields
-
 
     def _insert(self, *args, **kwargs):
         """
