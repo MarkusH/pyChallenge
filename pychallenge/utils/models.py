@@ -36,6 +36,10 @@ class Model(object):
         """
         return self.__meta__['pk']
 
+    @classmethod
+    def commit(self):
+        connection.commit()        
+
     def save(self, commit=True):
         """
         Calling the save methode will store the object in the databse.

@@ -88,7 +88,7 @@ class FK(Numeric):
     for foreign key validation.
     """
 
-    def __init__(self, ref_table, value=None):
+    def __init__(self, ref_table, value=0):
         """
         :param ref_table: defines the foreign table
         :type ref_table: String

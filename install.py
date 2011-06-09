@@ -47,4 +47,12 @@ if __name__ == "__main__":
             `name` TEXT,
             `static` NUMERIC
         );
+        CREATE TABLE `match1on1` (
+            `match_id` INTEGER PRIMARY KEY,
+            `game_id` NUMERIC,
+            `player1` NUMERIC,
+            `player2` NUMERIC,
+            `date` TEXT,
+            `outcome` NUMERIC
+        );
         """)
