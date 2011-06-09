@@ -7,5 +7,9 @@ glicko2.initialMu,8.6347
 glicko2.initialPhi,2.0417
 glicko2.initialSigma,0.06
 glicko2.tau.chess,0.5
+elo.k.default,32
+elo.k1.chess,10
+elo.k2.chess,15
+elo.k3.chess,25
 elo.function.chess,(lambda x:(1/(1+(10**(x/400.0)))))
 elo.function.STT,(lambda x:(1/(1+(10**(x/200.0)))))
