@@ -1,6 +1,7 @@
 import sys
 import argparse
 from pychallenge.algorithms import elo
+from pychallenge.models import Match1on1
 import csv
 
 #####################################################################
@@ -49,6 +50,8 @@ def elo_import(args):
         for row in reader:
             if line != 0:
                 print "Player1: " + row[1] + "; Player2: " + row[2] + "; " + outcome[float(row[3])]
+                dbRow = Match1on1(player1=row[1], player2=row[2], outcome=row[3])
+                #dbRow.save()
             line = line + 1
     except:
         print "Error importing", args.file, "in line", line
