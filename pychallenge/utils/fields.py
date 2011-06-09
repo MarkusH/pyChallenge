@@ -56,7 +56,7 @@ class Numeric(Field):
         try:
             return float(value)
         except ValueError:
-            return 0
+            return None
 
 
 class Text(Field):
@@ -79,7 +79,7 @@ class PK(Field):
         try:
             return int(value)
         except ValueError:
-            return 0
+            return None
 
 
 class FK(Numeric):
@@ -105,4 +105,4 @@ class FK(Numeric):
         try:
             return int(value)
         except ValueError:
-            return 0
+            return None
