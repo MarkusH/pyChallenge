@@ -48,15 +48,16 @@ game
 :param KEY: algorithm_type_id
 
 
-.. _database-match:
+.. _database-match1on1:
 
-match
------
-:param id: Integer
+match1on1
+---------
+
 :param game_id: Integer :ref:`database-game`
-:param participants_id: Integer :ref:`database-participant`
-
-:param PRIMARY: id
+:param participant_id1: Integer :ref:`database-participant`
+:param participant_id2: Integer :ref:`database-participant`
+:param date: Date
+:param outcome: Float
 
 
 .. _database-membership:
@@ -117,18 +118,55 @@ Algorithm specific databases
 
 The following tables are algorithm specific tables and 
 
+.. _database-config:
+
+config
+------
+
+:param key: String (keys for unique constants and config values e.g. glicko2.tau.chess or elo.function.chess)
+:param value: String
+
+:param UNIQUE: key
+
+
 .. _database-rank_elo:
 
 rank_elo
 --------
 
 :param player_id: Integer :ref:`database-player`
-:param value: Integer
 :param game_id: Integer :ref:`database-game`
+:param value: Integer
 
 :param UNIQUE: (player_id, game_id)
 :param KEY: game_id
 
+.. _databse-rank_glicko:
+
+rank_glicko
+-----------
+
+:param player_id: Integer :ref:`database-player`
+:param game_id: Integer :ref:`database-game`
+:param RD: Float
+:param rating: Float
+:param last_match: Date
+
+:param UNIQUE: (player_id, game_id)
+
+.. _database-rank_glicko2:
+
+rank_glicko2
+------------
+
+:param player_id: Integer :ref:`database-player`
+:param game_id: Integer :ref:`database-game`
+:param mu: Float
+:param phi: Float
+:param sigma: Float
+:param last_match: Date
+
+:param UNIQUE: (player_id, game_id)
 
 .. _database-rank_trueskill:
 

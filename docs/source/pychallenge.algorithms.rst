@@ -26,3 +26,12 @@ algorithms Package
     :members:
     :undoc-members:
     :show-inheritance:
+
+	
+:mod:`glicko2` Module
+--------------------
+
+.. automodule:: pychallenge.algorithms.glicko2
+    :members:
+    :undoc-members:
+    :show-inheritance:
