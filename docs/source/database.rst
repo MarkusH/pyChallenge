@@ -48,15 +48,16 @@ game
 :param KEY: algorithm_type_id
 
 
-.. _database-match:
+.. _database-match1on1:
 
-match
------
-:param id: Integer
+match1on1
+---------
+
 :param game_id: Integer :ref:`database-game`
-:param participants_id: Integer :ref:`database-participant`
-
-:param PRIMARY: id
+:param participant_id1: Integer :ref:`database-participant`
+:param participant_id2: Integer :ref:`database-participant`
+:param date: Date
+:param outcome: Float
 
 
 .. _database-membership:
