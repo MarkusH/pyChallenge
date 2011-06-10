@@ -4,10 +4,38 @@ from pychallenge.algorithms import elo
 from pychallenge.models import Match1on1
 import csv
 
+def prepare_args(args):
+    """
+    Prepares the arguments and checks if they  are valid. If not, prints an
+    error message. If some arguments are optional and were not set by the
+    user, it inserts the default values.
+
+    :param args: A list with arguments from the argument parser
+    :type args: namespace
+    :return: True, if the arguments are valid, False otherwise
+    :rtype: bool
+    """
+    return True
+
 #####################################################################
 #                           ELO sub commands                        #
 #####################################################################
+
 def elo_prepare_args(args):
+    """
+    Prepares the arguments for the ELO algorithm and calls the generic prepare
+    function. It also checks if the arguments are valid and, if not, prints an
+    error message. If some arguments are optional and were not set by the user,
+    it inserts the default values.
+
+    :param args: A list with arguments from the argument parser
+    :type args: namespace
+    :return: True, if the arguments are valid, False otherwise
+    :rtype: bool
+    """
+    if (not prepare_args(args)):
+        return False
+
     if (args.game == None):
         args.game = "chess"
     elif (not args.game in ['chess']):
@@ -17,6 +45,12 @@ def elo_prepare_args(args):
         
 
 def elo_add_result(args):
+    """
+    Adds a result row to the result table.
+    
+    :param args: A list with arguments from the argument parser
+    :type args: namespace
+    """
     if (not elo_prepare_args(args)):
         return
     outcome = {
@@ -30,8 +64,8 @@ def elo_add_result(args):
     print "\tOutcome: ", outcome[args.outcome]
     print "------------------------------"
 
-def elo_import(args):
-    if (not elo_prepare_args(args)):
+def import_results(args):
+    if (not prepare_args(args)):
         return
 
     outcome = {
@@ -40,13 +74,11 @@ def elo_import(args):
         0.5: "Draw"
     }
 
-    print "Importing results to ELO", args.game
-    print "\tFile:", args.file
+    print "Importing results from", args.file
 
     try:
         line = 0
         reader = csv.reader(open(args.file, 'rb'), delimiter=',')
-        #print "Importing the following data:"
         for row in reader:
             if line != 0:
                 #print "Player1: " + row[1] + "; Player2: " + row[2] + "; " + outcome[float(row[3])]
@@ -77,25 +109,23 @@ def elo_value(args):
 
 def parse():
     parser = argparse.ArgumentParser(prog='pyChallenge')
+    parser.add_argument('--game', help='Specify a game for the following command. The default value is chess.')
     subparsers = parser.add_subparsers(help='sub-command help')
-    
+
+    p_import = subparsers.add_parser('import-results', help='Import data to the result table')
+    p_import.add_argument('file', help='The file to import')
+    p_import.set_defaults(func=import_results)
+ 
     # ELO sub-commands
     p_elo = subparsers.add_parser('elo', help='Commands for the ELO algorithm')
-    p_elo.add_argument('--game', help='Choose a game for ELO')
     p_elo_sub = p_elo.add_subparsers(help='sub-command help for ELO')
-   
 
     # ELO add result
-    p_elo_add_result = p_elo_sub.add_parser('addresult', help='Add a result to the ELO table')
+    p_elo_add_result = p_elo_sub.add_parser('add-result', help='Add a result to the ELO table')
     p_elo_add_result.add_argument('player1', type=int, help='ID of player 1')
     p_elo_add_result.add_argument('player2', type=int, help='ID of player 2')
     p_elo_add_result.add_argument('outcome', type=float, help='Outcome of the game: 0 = player 1 lost; 0.5 = draw; 1 = player 1 won')
     p_elo_add_result.set_defaults(func=elo_add_result)
-
-    # ELO import
-    p_elo_import = p_elo_sub.add_parser('import', help='Import data to the ELO table')
-    p_elo_import.add_argument('file', help='The file to import')
-    p_elo_import.set_defaults(func=elo_import)    
 
     # ELO update
     p_elo_update = p_elo_sub.add_parser('update', help='Update the ELO values for all players')
