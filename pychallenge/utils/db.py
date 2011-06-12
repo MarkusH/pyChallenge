@@ -1,12 +1,12 @@
 import sqlite3
-from pychallenge.utils import settings
+from pychallenge.utils import settings, fields
 
 
 connection = sqlite3.connect(settings.SETTINGS['DATABASE'])
 db = connection.cursor()
 
 class KeyTable():
-    
+
     def __init__(self):
         self.keys = {}
 
@@ -25,10 +25,16 @@ class KeyTable():
         self.keys[n] = value
         return n
 
+    def get(self):
+        return self.keys
+
     def __iter__(self):
         self.index = 0
         self.length = len(self.keys.keys())
         return self
+
+    def __len__(self):
+        return len(self.keys)
 
     def __next__(self):
         if self.index < self.length:
@@ -39,6 +45,9 @@ class KeyTable():
 
 
 class Query():
+    """
+    http://www.sqlite.org/lang_select.html
+    """
 
     QTYPE_SELECT = 1
     QTYPE_INSERT = 2
@@ -48,35 +57,38 @@ class Query():
 
     AGGREGATE = ['avg', 'count', 'min', 'max']
 
-    def __init__(self, qtype, modelfields, *args, **kwargs):
+    def __init__(self, qtype, modelfields, **kwargs):
         """
 
         """
 
         self.qtype = qtype
+        self.modelfield_names = modelfields.keys()
         self.modelfields = modelfields
-        self.modelfields.append('*')
         self.key_table = KeyTable()
+        self.dry_run = kwargs.get('dry_run', False)
         self.filter_fields = []
         self.select_fields = []
+        self.limit_expression = ""
 
         if not kwargs.get('table', None):
             raise AttributeError("Missing table definition")
         self.table = kwargs.pop('table')
+
         if self.qtype == Query.QTYPE_SELECT:
-            self._select(*args, **kwargs)
+            self._select()
 
         elif self.qtype == Query.QTYPE_INSERT:
-            self._insert(*args, **kwargs)
+            self._insert(**kwargs)
 
         elif self.qtype == Query.QTYPE_UPDATE:
-            self._update(*args, **kwargs)
+            self._update(**kwargs)
 
         elif self.qtype == Query.QTYPE_DELETE:
-            self._delete(*args, **kwargs)
+            self._delete(**kwargs)
 
         elif self.qtype == Query.QTYPE_CREATE:
-            self._create(*args, **kwargs)
+            self._create(**kwargs)
 
         else:
             raise AttributeError("qtype must be one of QTYPE_SELECT, "
@@ -84,7 +96,30 @@ class Query():
                 "QTYPE_CREATE")
 
 
-    def run(self, dry_run=True):
+    def run(self):
+
+        def match(x):
+            """
+            Helper function to create update statement - check for NOT
+            :py:func:`pychallenge.utils.models.Model.pk`
+
+            :param x: fieldname
+            :type x: String
+            :return: True if `x` is not the models pk
+            """
+            return self.pk != x
+
+        def format(x):
+            """
+            Helper function to create update statement - format the sql
+            assignments
+
+            :param x: fieldname
+            :type x: String
+            :return: Returns a formatted string for the given fieldname
+            """
+            return "%s = :%s" % (x, x)
+
         if self.qtype == Query.QTYPE_SELECT:
             statement = "SELECT %(_fields)s FROM %(_table)s"
             replace = {
@@ -96,15 +131,43 @@ class Query():
                 statement += " WHERE %(_filter)s"
                 replace['_filter'] = self.filter_fields[0]
 
-        if dry_run:
+            statement += self.limit_expression
+
+        elif self.qtype == Query.QTYPE_INSERT:
+            pass
+
+        elif self.qtype == Query.QTYPE_UPDATE:
+            pass
+
+        elif self.qtype == Query.QTYPE_DELETE:
+            pass
+
+        elif self.qtype == Query.QTYPE_CREATE:
+            statement = "CREATE TABLE `%(_table)s` (%(_fields)s);"
+            flds = []
+            for f, i in self.modelfields.iteritems():
+                if isinstance(i, fields.Numeric):
+                    flds.append("`%s` NUMERIC" % f)
+                elif isinstance(i, fields.Text):
+                    flds.append("`%s` TEXT" % f)
+                elif isinstance(i, fields.PK):
+                    flds.append("`%s` INTEGER PRIMARY KEY" % f)
+            replace = {
+                '_table': self.table,
+                '_fields': ", ".join(flds),
+            }
+
+        if self.dry_run:
             print statement % replace
             if settings.SETTINGS['DEBUG']:
-                print self.key_table
+                if self.key_table:
+                    print self.key_table
             return None
         elif settings.SETTINGS['DEBUG']:
             print statement % replace
-            print self.key_table
-        return statement
+            if self.key_table:
+                print self.key_table
+        return (statement % replace, self.key_table.get())
 
 
     def filter(self, **kwargs):
@@ -118,8 +181,10 @@ class Query():
             Use `__in` and `__nin` and assign either a `list` or a `tuple` for
             `IN` or `NOT IN`.
         """
-        tmp = "(" + " AND ".join(self._get_filter_fields(**kwargs)) + ")"
-        self.filter_fields.append(tmp)
+        ff = self._get_filter_fields(**kwargs)
+        if ff:
+            tmp = "(" + " AND ".join(ff) + ")"
+            self.filter_fields.append(tmp)
         return self
 
 
@@ -128,8 +193,10 @@ class Query():
         See :py:func:`pychallenge.utils.db.Query.filter`.
         The only difference is the combination `OR`.
         """
-        tmp = "(" + " OR ".join(self._get_filter_fields(**kwargs)) + ")"
-        self.filter_fields.append(tmp)
+        ff = self._get_filter_fields(**kwargs)
+        if ff:
+            tmp = "(" + " OR ".join(ff) + ")"
+            self.filter_fields.append(tmp)
         return self
 
 
@@ -153,38 +220,46 @@ class Query():
         return self
 
 
-    def _select(self, *args, **kwargs):
+    def limit(self, count, offset=None):
+        if offset:
+            self.limit_expression = " LIMIT %d, %d" % (count, offset)
+        else:
+            self.limit_expression = " LIMIT %d" % count
+        return self
+
+
+    def _select(self, **kwargs):
         """
 
         """
-        flds = kwargs.pop('fields', '*')
-        self.select_fields += self._get_select_fields(flds, aggregate=True)
+        self.select_fields += self._get_select_fields(self.modelfield_names,
+             aggregate=True)
         # unique `self.select_fields`
         tmp = {}
         for e in self.select_fields:
             tmp[e] = 1
         self.select_fields = tmp.keys()
-        
 
-    def _insert(self, *args, **kwargs):
+
+    def _insert(self, **kwargs):
         """
 
         """
         pass
 
-    def _update(self, *args, **kwargs):
+    def _update(self, **kwargs):
         """
 
         """
         pass
 
-    def _delete(self, *args, **kwargs):
+    def _delete(self, **kwargs):
         """
 
         """
         pass
 
-    def _create(self, *args, **kwargs):
+    def _create(self, **kwargs):
         """
 
         """
@@ -218,12 +293,12 @@ class Query():
             parts = f.split('__')
 
             # if no comparison is specified act as __eq
-            if len(parts) == 1 and parts[0] in self.modelfields:
+            if len(parts) == 1 and parts[0] in self.modelfield_names:
                 n = self.key_table.add(name=f, value=v)
                 flds.append(build(parts[0], n, op['eq']))
 
             # there is a concrete comparison
-            elif len(parts) == 2 and parts[0] in self.modelfields:
+            elif len(parts) == 2 and parts[0] in self.modelfield_names:
 
                 # it's a simple comparision operator
                 if parts[1] in op.keys():
@@ -262,11 +337,11 @@ class Query():
                 parts = f.split('__')
 
                 # we have no agg. function -> directly add the field
-                if len(parts) == 1 and parts[0] in self.modelfields:
+                if len(parts) == 1 and parts[0] in self.modelfield_names:
                     flds.append(f)
 
                 # build the aggregation sql string for the agg. function
-                elif len(parts) == 2 and parts[0] in self.modelfields:
+                elif len(parts) == 2 and parts[0] in self.modelfield_names:
                     if parts[1] in Query.AGGREGATE:
                         f_n = parts[1].upper() + '(' + parts[0] + ') AS ' + f
                         flds.append(f_n)
@@ -279,10 +354,10 @@ class Query():
                     raise AttributeError("Unknown field %s" % f)
 
         # we don't accept an aggregation function. Just check that all given
-        # fields are allowed (along to self.modelfields)
+        # fields are allowed (along to self.modelfield_names)
         else:
             for f in fields:
-                if f in self.modelfields:
+                if f in self.modelfield_names:
                     flds.append(f)
                 else:
                     raise AttributeError("Unknown field %s" % f)

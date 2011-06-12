@@ -1,5 +1,5 @@
 import copy
-from pychallenge.utils.db import db, connection
+from pychallenge.utils.db import db, connection, Query
 from pychallenge.utils.fields import Field, Numeric, Text, PK, FK
 
 
@@ -7,6 +7,7 @@ class Model(object):
     """
     This is the general Model class. All Models inherit from this one
     """
+    __query__ = None
 
     def __init__(self, **kwargs):
         """
@@ -35,6 +36,44 @@ class Model(object):
         :return: None if there is no PK, else the name of the PK-field
         """
         return self.__meta__['pk']
+
+    @classmethod
+    def all(cls, **kwargs):
+        """
+        """
+        cls.q = cls.q.filter(**kwargs)
+        fields = [f for f, t in cls.__dict__.items() if isinstance(t, Field)]
+        
+        ret = cls.q.run()
+        if ret:
+            statement, values = ret
+            db.execute(statement, values)
+            result = []
+            for row in db:
+                i = 0
+                tmp = {}
+                while i < len(row):
+                    tmp[fields[i]] = row[i]
+                    i += 1
+                instance = cls(**tmp)
+                result.append(copy.copy(instance))
+            return result if len(result) > 0 else None
+
+    @classmethod
+    def create(cls, dry_run=False):
+        fields = {}
+        for f, t in cls.__dict__.items():
+            if isinstance(t, Field):
+                fields[f] = t
+
+        kwargs = {
+            'table': cls.__name__.lower(),
+            'dry_run': dry_run,
+        }
+        cls.q = Query(Query.QTYPE_CREATE, fields, **kwargs)
+        statement = cls.q.run()
+        if statement:
+            db.execute(statement)
 
     @classmethod
     def commit(self):
@@ -122,54 +161,71 @@ class Model(object):
                 connection.commit()
 
     @classmethod
-    def query(cls, **kwargs):
-        """
-        :return: list of instances matching the given attributes
-        """
-        fields = [f for f, t in cls.__dict__.items() if isinstance(t, Field)]
-
-        exists = lambda x: x in fields
-
-        matching = [x for x in kwargs.keys() if exists(x)]
-
-        cmd = "SELECT %(_fieldlist)s FROM %(_tablename)s" % {
-            '_fieldlist': ", ".join(fields),
-            '_tablename': cls.__name__.lower(),
-        }
-        if len(matching) > 0:
-            cmd += " WHERE "
-            cmd += " and ". join("%s = :%s" % (f, f) for f in matching)
-        values = {}
-        for f in matching:
-            values[f] = kwargs.get(f)
-        db.execute(cmd, values)
-        result = []
-        for row in db:
-            i = 0
-            tmp = {}
-            while i < len(row):
-                tmp[fields[i]] = row[i]
-                i += 1
-            instance = cls(**tmp)
-            result.append(copy.copy(instance))
-        return result if len(result) > 0 else None
-
-    @classmethod
     def get(cls, **kwargs):
         """
         :return: returns a sigle instances of the model or None if there is\
                 no object matching the pattern If more that one object matches\
                 the pattern an exception is raised
         """
-        q = cls.query(**kwargs)
-        if q:
-            if len(q) > 1:
-                raise Exception("More than 1 (%d) objects for %s returned." %
-                    (len(q), cls.__name__))
-            else:
-                return q[0]
-        else:
-            return None
+        cls.q = cls.q.filter(**kwargs).limit(1)
+        fields = [f for f, t in cls.__dict__.items() if isinstance(t, Field)]
+        
+        ret = cls.q.run()
+        if ret:
+            statement, values = ret
+            db.execute(statement, values)
+            result = []
+            for row in db:
+                i = 0
+                tmp = {}
+                while i < len(row):
+                    tmp[fields[i]] = row[i]
+                    i += 1
+                instance = cls(**tmp)
+                result.append(copy.copy(instance))
+            return result if len(result) > 0 else None
+
+    @classmethod
+    def query(cls, dry_run=False):
+        """
+        :return: list of instances matching the given attributes
+        """
+        fields = {}
+        for f, t in cls.__dict__.items():
+            if isinstance(t, Field):
+                fields[f] = t
+
+        kwargs = {
+            'table': cls.__name__.lower(),
+            'dry_run': dry_run,
+        }
+        cls.q = Query(Query.QTYPE_SELECT, fields, **kwargs)
+        return cls
+
+    @classmethod
+    def filter(cls, **kwargs):
+        cls.q = cls.q.filter(**kwargs)
+        return cls
+
+    @classmethod
+    def filter_or(cls, **kwargs):
+        cls.q = cls.q.filter_or(**kwargs)
+        return cls
+
+    @classmethod
+    def join_and(cls):
+        cls.q = cls.q.join_and()
+        return cls
+
+    @classmethod
+    def join_or(cls):
+        cls.q = cls.q.join_or()
+        return cls
+
+    @classmethod
+    def limit(self, count, offset=None):
+        cls.q = cls.q.limit(cound, offset)
+        return cls
 
     def _set_meta_field(self, name, value=None, instance=None):
         """

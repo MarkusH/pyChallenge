@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 
-from pychallenge.ui import parser2
+from pychallenge.models import Algorithm
 
 if __name__ == "__main__":
-    parser2.parse()
-
+    print Algorithm.create(dry_run=True)
+    print Algorithm.query().get()
+    print Algorithm.query().all()
+    print Algorithm.query().all(name='name')
+    print Algorithm.query().filter_or(algorithm_type_id__ge=33, name='name').all()
