@@ -106,3 +106,20 @@ class FK(Numeric):
             return int(value)
         except ValueError:
             return None
+
+class Date(Field)
+    from datetime import datetime
+    """
+    This field class matches the SQLite field type "DATE"
+    """
+    def clean(self, value):
+        """
+        :param value: clean `value`
+        :type value: variable
+        :return: cleans up the value and returns the cleaned data
+        """
+        try:
+            datetime.strptime(value, "%d.%m.%Y")
+            return value
+        except ValueError:
+            return None
