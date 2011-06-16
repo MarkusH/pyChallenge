@@ -10,8 +10,8 @@ class Algorithm(models.Model):
 class Match1on1(models.Model):
     match_id = models.PK()
     game_id = models.FK('.....')
-    player1 = models.Numeric()
-    player2 = models.Numeric()
+    player1 = models.FK('Player')
+    player2 = models.FK('Player')
     date = models.Text()
     outcome = models.Numeric()
 

@@ -255,6 +255,7 @@ class Query():
         for e in self.select_fields:
             tmp[e] = 1
         self.select_fields = tmp.keys()
+        self.select_fields.sort()
 
     def _insert(self, **kwargs):
         """

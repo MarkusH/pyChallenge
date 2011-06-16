@@ -87,21 +87,32 @@ def import_results(args):
         for row in reader:
             if line != 0 or (line == 0 and not hasHeader):
                 #print "Player1: " + row[1] + "; Player2: " + row[2] + "; " + outcome[float(row[3])]
-                dbRow = Match1on1(player1=row[1], player2=row[2], outcome=row[3])
+
+                player1 = Player.query().get(nickname=row[1])
+                #print player1
+                if player1 == None:
+                    #print "new player1: %s" % row[1]
+                    player1 = Player(firstname="", lastname="", nickname=row[1])
+                    player1.save(commit=False)
+                    rank1 = RankElo(player_id=player1.player_id)
+                    #print rank1
+                    #rank1.save()
+
+                player2 = Player.query().get(nickname=row[2])
+                #print player2
+                if player2 == None:
+                    #print "new player2: %s" % row[2]
+                    player2 = Player(firstname="", lastname="", nickname=row[2])
+                    player2.save(commit=False)
+                    #rank2 = RankElo(player_id=player2.player_id)
+                    #print rank2
+                    #rank2.save()
+
+                dbRow = Match1on1(player1=player1.__dict__['__meta__']['fields']['player_id'].value, player2=player2.__dict__['__meta__']['fields']['player_id'].value, outcome=row[3])
                 dbRow.save(commit=False)
-                player = Player.get(nickname=row[1])
-                if player == None:
-                    player = Player(player_id=row[1], firstname="", lastname="", nickname=row[1])
-                    print player.__dict__['__meta__']['fields']['player_id'].value
-                    player.save(commit=False)
-                    print "player_pk =", player.player_id.value
-                    rank = RankElo(player_id=player.player_id, game_id=0, value=1500)
-                player = Player.get(nickname=row[2])
-                if player == None:
-                    player = Player(player_id=row[1], firstname="", lastname="", nickname=row[2])
-                    player.save(commit=False)
-                    print "player_id =", player.player_id
-                    rand = RankElo(player_id=player.player_id, game_id=0, value=1500)
+            if line % 100 == 0:
+                print "imported %d lines" % line
+                Match1on1.commit()
             line = line + 1
         Match1on1.commit()
         print "Imported", line - 1, "entries."

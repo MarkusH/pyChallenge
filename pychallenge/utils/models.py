@@ -43,6 +43,7 @@ class Model(object):
         """
         cls.__query__ = cls.__query__.filter(**kwargs)
         fields = [f for f, t in cls.__dict__.items() if isinstance(t, Field)]
+        fields.sort()
 
         ret = cls.__query__.run()
         if ret:
@@ -137,6 +138,7 @@ class Model(object):
         """
         cls.__query__ = cls.__query__.filter(**kwargs).limit(1)
         fields = [f for f, t in cls.__dict__.items() if isinstance(t, Field)]
+        fields.sort()
 
         ret = cls.__query__.run()
         if ret:
@@ -150,8 +152,8 @@ class Model(object):
                     tmp[fields[i]] = row[i]
                     i += 1
                 instance = cls(**tmp)
-                result.append(copy.copy(instance))
-            return result[0] if len(result) > 0 else None
+                return instance
+        return None
 
     @classmethod
     def query(cls, dry_run=False):
@@ -249,5 +251,8 @@ class Model(object):
         :return: Returns a readable and unambigious representation of a modal\
                 instance
         """
-        return "<%s pk=%s>" % (self.__meta__['name'],
-            self.__meta__['fields'][self.pk].value)
+        if self.pk:
+            return "<%s pk=%s>" % (self.__meta__['name'],
+                self.__meta__['fields'][self.pk].value)
+        else:
+            return "<%s instance>" % self.__meta__['name']
