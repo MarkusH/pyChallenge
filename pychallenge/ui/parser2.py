@@ -80,9 +80,13 @@ def import_results(args):
 
     try:
         line = 0
-        reader = csv.reader(open(args.file, 'rb'), delimiter=',')
+        csvfile = open(args.file, 'rb')
+        sample = csvfile.read(1024)
+        csvfile.seek(0)
+        hasHeader = csv.Sniffer().has_header(sample)
+        reader = csv.reader(csvfile, delimiter=',')
         for row in reader:
-            if line != 0:
+            if line != 0 or (line == 0 and not hasHeader):
                 #print "Player1: " + row[1] + "; Player2: " + row[2] + "; " + outcome[float(row[3])]
                 dbRow = Match1on1(player1=row[1], player2=row[2], outcome=row[3])
                 dbRow.save(commit=False)
