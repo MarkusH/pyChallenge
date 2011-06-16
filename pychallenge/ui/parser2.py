@@ -1,8 +1,7 @@
 import sys
 import argparse
 from pychallenge.algorithms import elo
-from pychallenge.models import Match1on1
-from pychallenge.models import Player
+from pychallenge.models import Match1on1, Player, RankElo
 import csv
 
 supported_games = ['chess']
@@ -88,8 +87,17 @@ def import_results(args):
                 dbRow.save(commit=False)
                 player = Player.get(nickname=row[1])
                 if player == None:
-                    player = Player(firstname="", lastname="", nickname=row[1])
+                    player = Player(player_id=row[1], firstname="", lastname="", nickname=row[1])
+                    print player.__dict__['__meta__']['fields']['player_id'].value
                     player.save(commit=False)
+                    print "player_pk =", player.player_id.value
+                    rank = RankElo(player_id=player.player_id, game_id=0, value=1500)
+                player = Player.get(nickname=row[2])
+                if player == None:
+                    player = Player(player_id=row[1], firstname="", lastname="", nickname=row[2])
+                    player.save(commit=False)
+                    print "player_id =", player.player_id
+                    rand = RankElo(player_id=player.player_id, game_id=0, value=1500)
             line = line + 1
         Match1on1.commit()
         print "Imported", line - 1, "entries."

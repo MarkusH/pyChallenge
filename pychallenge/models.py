@@ -20,3 +20,8 @@ class Player(models.Model):
     firstname = models.Text()
     lastname = models.Text()
     nickname = models.Text()
+
+class RankElo(models.Model):
+    player_id = models.FK('Player')
+    game_id = models.FK('Game')
+    value = models.Numeric(value=1500)
