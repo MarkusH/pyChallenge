@@ -14,3 +14,9 @@ class Match1on1(models.Model):
     player2 = models.Numeric()
     date = models.Text()
     outcome = models.Numeric()
+
+class Player(models.Model):
+    player_id = models.PK()
+    firstname = models.Text()
+    lastname = models.Text()
+    nickname = models.Text()

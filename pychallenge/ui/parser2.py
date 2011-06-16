@@ -2,6 +2,7 @@ import sys
 import argparse
 from pychallenge.algorithms import elo
 from pychallenge.models import Match1on1
+from pychallenge.models import Player
 import csv
 
 supported_games = ['chess']
@@ -85,6 +86,10 @@ def import_results(args):
                 #print "Player1: " + row[1] + "; Player2: " + row[2] + "; " + outcome[float(row[3])]
                 dbRow = Match1on1(player1=row[1], player2=row[2], outcome=row[3])
                 dbRow.save(commit=False)
+                player = Player.get(nickname=row[1])
+                if player == None:
+                    player = Player(firstname="", lastname="", nickname=row[1])
+                    player.save(commit=False)
             line = line + 1
         Match1on1.commit()
         print "Imported", line - 1, "entries."
@@ -92,6 +97,8 @@ def import_results(args):
         print "Error importing", args.file, "in line", line
 
 def update(args):
+    def update_elo():
+        print "elo_update..."
     """
     Updates the ratings for all players.
     
@@ -101,9 +108,16 @@ def update(args):
     if (not prepare_args(args)):
         return
 
+    update_funcs = {
+        'elo' : update_elo
+    }
+
     print "Updating the ratings for all players in", args.game, "using", args.algorithm
+    update_funcs[args.algorithm]();
 
 def match(args):
+    def match_elo():
+        print "elo_match..."
     """
     Finds the best opponent for a given player.
 
@@ -112,10 +126,18 @@ def match(args):
     """
     if (not prepare_args(args)):
         return
+    
+    match_funcs = {
+        'elo' : match_elo
+    }
+
     print "Finding the best opponent for the player", args.player, "in", args.game, "using", args.algorithm
+    match_funcs[args.algorithm]();
     print "Best Opponent:", "...."
 
 def rating(args):
+    def rating_elo():
+        print "rating_elo..."
     """
     Queries the rating of a given player.
 
@@ -124,7 +146,13 @@ def rating(args):
     """
     if (not prepare_args(args)):
         return
+
+    rating_funcs = {
+        'elo' : rating_elo
+    }
+
     print "The rating for player", args.player, "in", args.game, "using", args.algorithm, "is", "..."
+    rating_funcs[args.algorithm]()
 
 def parse():
     parser = argparse.ArgumentParser(prog='pyChallenge')
