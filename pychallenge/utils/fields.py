@@ -1,3 +1,6 @@
+from datetime import datetime
+
+
 class Field():
     """
     Base field class for all fields
@@ -34,7 +37,7 @@ class Field():
 
     value = property(get_value, set_value)
 
-    def __str__(self):
+    def __repr__(self):
         """
         :return: This returns a string formatted field-object
         """
@@ -107,8 +110,8 @@ class FK(Numeric):
         except ValueError:
             return None
 
-class Date(Field)
-    from datetime import datetime
+
+class Date(Field):
     """
     This field class matches the SQLite field type "DATE"
     """
@@ -119,7 +122,7 @@ class Date(Field)
         :return: cleans up the value and returns the cleaned data
         """
         try:
-            datetime.strptime(value, "%d.%m.%Y")
+            datetime.strptime(value, "%Y-%m-%d")
             return value
         except ValueError:
             return None

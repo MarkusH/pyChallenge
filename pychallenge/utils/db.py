@@ -5,6 +5,7 @@ from pychallenge.utils import settings, fields
 connection = sqlite3.connect(settings.SETTINGS['DATABASE'])
 db = connection.cursor()
 
+
 class KeyTable():
 
     def __init__(self):
@@ -16,12 +17,12 @@ class KeyTable():
     def used(self, name):
         return name in self.keys.keys()
 
-    def add(self, name, value = None):
+    def add(self, name, value=None):
         n = name
         i = 1
         while n in self.keys.keys():
-            n = "%s_%d" %(name, i)
-            i = i +1
+            n = "%s_%d" % (name, i)
+            i = i + 1
         self.keys[n] = value
         return n
 
@@ -95,9 +96,7 @@ class Query():
                 "QTYPE_INSERT, QTYPE_UPDATE, QTYPE_DELETE, "
                 "QTYPE_CREATE")
 
-
     def run(self):
-
         def match(x):
             """
             Helper function to create update statement - check for NOT
@@ -134,10 +133,29 @@ class Query():
             statement += self.limit_expression
 
         elif self.qtype == Query.QTYPE_INSERT:
-            pass
+            statement = "INSERT INTO %(_table)s (%(_fs)s) VALUES (%(_vs)s)"
+            ff = {}
+            for k, f in self.modelfields.iteritems():
+                if isinstance(f, fields.PK):
+                    continue
+                ff[k] = ":%s" % k
+                self.key_table.add(name=k, value=f.value)
+
+            replace = {
+                '_table': self.table,
+                '_fs': ", ".join(ff.keys()),
+                '_vs': ", ".join(ff.values())}
 
         elif self.qtype == Query.QTYPE_UPDATE:
-            pass
+            statement = "UPDATE %(_table)s SET %(_fields)s WHERE %(_pk)s"
+            ff = {}
+            for k, f in self.modelfields.iteritems():
+                ff["%s__eq" % k] = f.value
+
+            replace = {
+                '_table': self.table,
+                '_pk': "%s = :%s__eq" % (self.pk, self.pk),
+                '_fields': ", ".join(self._get_filter_fields(**ff))}
 
         elif self.qtype == Query.QTYPE_DELETE:
             pass
@@ -169,7 +187,6 @@ class Query():
                 print self.key_table
         return (statement % replace, self.key_table.get())
 
-
     def filter(self, **kwargs):
         """
         Use `filer` for specifying the `WHERE`-clause of the SQL statement.
@@ -187,7 +204,6 @@ class Query():
             self.filter_fields.append(tmp)
         return self
 
-
     def filter_or(self, **kwargs):
         """
         See :py:func:`pychallenge.utils.db.Query.filter`.
@@ -199,7 +215,6 @@ class Query():
             self.filter_fields.append(tmp)
         return self
 
-
     def join_and(self):
         """
         use this function to concat filter expressions with *AND*
@@ -208,7 +223,6 @@ class Query():
             tmp = "(" + " AND ".join(self.filter_fields) + ")"
             self.filter_fields = [tmp]
         return self
-
 
     def join_or(self):
         """
@@ -219,14 +233,12 @@ class Query():
             self.filter_fields = [tmp]
         return self
 
-
     def limit(self, count, offset=None):
         if offset:
             self.limit_expression = " LIMIT %d, %d" % (count, offset)
         else:
             self.limit_expression = " LIMIT %d" % count
         return self
-
 
     def _select(self, **kwargs):
         """
@@ -240,7 +252,6 @@ class Query():
             tmp[e] = 1
         self.select_fields = tmp.keys()
 
-
     def _insert(self, **kwargs):
         """
 
@@ -251,7 +262,10 @@ class Query():
         """
 
         """
-        pass
+        if 'pk' in kwargs.keys():
+            self.pk = kwargs.pop('pk')
+        else:
+            raise AttributeError("Updating a model needs an existing PK!")
 
     def _delete(self, **kwargs):
         """
@@ -283,8 +297,7 @@ class Query():
 
         lop = {
             'in': 'IN',
-            'nin': 'NOT IN'
-        }
+            'nin': 'NOT IN'}
         flds = []
         # iterate over all given filter fields
         for f, v in kwargs.iteritems():
@@ -320,7 +333,6 @@ class Query():
             else:
                 raise AttributeError("Unknown field %s" % f)
         return flds
-
 
     def _get_select_fields(self, fields, aggregate=False, **kwargs):
         """

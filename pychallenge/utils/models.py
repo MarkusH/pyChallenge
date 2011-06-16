@@ -41,10 +41,10 @@ class Model(object):
     def all(cls, **kwargs):
         """
         """
-        cls.q = cls.q.filter(**kwargs)
+        cls.__query__ = cls.__query__.filter(**kwargs)
         fields = [f for f, t in cls.__dict__.items() if isinstance(t, Field)]
         
-        ret = cls.q.run()
+        ret = cls.__query__.run()
         if ret:
             statement, values = ret
             db.execute(statement, values)
@@ -70,8 +70,8 @@ class Model(object):
             'table': cls.__name__.lower(),
             'dry_run': dry_run,
         }
-        cls.q = Query(Query.QTYPE_CREATE, fields, **kwargs)
-        statement = cls.q.run()
+        cls.__query__ = Query(Query.QTYPE_CREATE, fields, **kwargs)
+        statement = cls.__query__.run()
         if statement:
             db.execute(statement)
 
@@ -87,61 +87,27 @@ class Model(object):
         :type commit: Boolean
         """
         if self.pk and self.__meta__['fields'][self.pk].value:
-            cmd = "UPDATE %s SET " % self.__meta__['name']
+            __query__ = Query(Query.QTYPE_UPDATE, self.__meta__['fields'],
+                            table=self.__meta__['name'],
+                            pk=self.pk)
+            ret = __query__.run()
+            if ret:
+                statement, values = ret
+                db.execute(statement, values)
+                if commit:
+                    connection.commit()
 
-            def match(x):
-                """
-                Helper function to create update statement - check for NOT
-                :py:func:`pychallenge.utils.models.Model.pk`
-
-                :param x: fieldname
-                :type x: String
-                :return: True if `x` is not the models pk
-                """
-                return self.pk != x
-
-            def format(x):
-                """
-                Helper function to create update statement - format the sql
-                assignments
-
-                :param x: fieldname
-                :type x: String
-                :return: Returns a formatted string for the given fieldname
-                """
-                return "%s = :%s" % (x, x)
-
-            cmd += ", ".join(map(format, filter(match,
-                                    self.__meta__['fields'].keys())))
-            """
-            The following line builds the assignment part of the SQL
-            statement::
-
-                a = :a, b = :b, c = :c, ....
-
-            When calling :py:func:`pychallenge.utils.models.db.execute()` make
-            sure to name the keys of the dictionary regarding the fieldname
-            """
-
-            cmd += " WHERE %s = :%s" % (self.__meta__['pk'],
-                self.__meta__['pk'])
         else:
-            flist = []
-            flist2 = []
-            for f in self.__meta__['fields']:
-                flist.append(f)
-                flist2.append(":%s" % f)
-            fl = ", ".join(flist)
-            fl2 = ", ".join(flist2)
-            cmd = "INSERT INTO %(_tablename)s (%(fl)s) VALUES (%(fl2)s)" % {
-                '_tablename': self.__meta__['name'], 'fl': fl, 'fl2': fl2}
-        values = {}
-        for f, t in self.__meta__['fields'].items():
-            values[f] = t.value
-        db.execute(cmd, values)
-        if commit:
-            connection.commit()
-        self.__meta__['fields'][self.pk].set_value(db.lastrowid)
+            __query__ = Query(Query.QTYPE_INSERT, self.__meta__['fields'],
+                            table=self.__meta__['name'],
+                            pk=self.pk)
+            ret = __query__.run()
+            if ret:
+                statement, values = ret
+                db.execute(statement, values)
+                if commit:
+                    connection.commit()
+                    self.__meta__['fields'][self.pk].value = db.lastrowid
 
     def delete(self, commit=True):
         """
@@ -152,11 +118,11 @@ class Model(object):
         :type commit: Boolean
         """
         if self.pk and self.__meta__['fields'][self.pk].value:
-            cmd = "DELETE FROM %(_tablename)s WHERE %(_pk)s = :%(_pk)s" % {
+            statement = "DELETE FROM %(_tablename)s WHERE %(_pk)s = :%(_pk)s" % {
                 '_tablename': self.__meta__['name'],
                 '_pk': self.pk,
             }
-            db.execute(cmd, {self.pk: self.__meta__['fields'][self.pk].value})
+            db.execute(statement, {self.pk: self.__meta__['fields'][self.pk].value})
             if commit:
                 connection.commit()
 
@@ -167,10 +133,10 @@ class Model(object):
                 no object matching the pattern If more that one object matches\
                 the pattern an exception is raised
         """
-        cls.q = cls.q.filter(**kwargs).limit(1)
+        cls.__query__ = cls.__query__.filter(**kwargs).limit(1)
         fields = [f for f, t in cls.__dict__.items() if isinstance(t, Field)]
         
-        ret = cls.q.run()
+        ret = cls.__query__.run()
         if ret:
             statement, values = ret
             db.execute(statement, values)
@@ -199,32 +165,32 @@ class Model(object):
             'table': cls.__name__.lower(),
             'dry_run': dry_run,
         }
-        cls.q = Query(Query.QTYPE_SELECT, fields, **kwargs)
+        cls.__query__= Query(Query.QTYPE_SELECT, fields, **kwargs)
         return cls
 
     @classmethod
     def filter(cls, **kwargs):
-        cls.q = cls.q.filter(**kwargs)
+        cls.__query__ = cls.__query__.filter(**kwargs)
         return cls
 
     @classmethod
     def filter_or(cls, **kwargs):
-        cls.q = cls.q.filter_or(**kwargs)
+        cls.__query__ = cls.__query__.filter_or(**kwargs)
         return cls
 
     @classmethod
     def join_and(cls):
-        cls.q = cls.q.join_and()
+        cls.__query__ = cls.__query__.join_and()
         return cls
 
     @classmethod
     def join_or(cls):
-        cls.q = cls.q.join_or()
+        cls.__query__ = cls.__query__.join_or()
         return cls
 
     @classmethod
     def limit(self, count, offset=None):
-        cls.q = cls.q.limit(cound, offset)
+        cls.__query__ = cls.__query__.limit(cound, offset)
         return cls
 
     def _set_meta_field(self, name, value=None, instance=None):
