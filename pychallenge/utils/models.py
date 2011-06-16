@@ -108,6 +108,7 @@ class Model(object):
                 db.execute(statement, values)
                 if commit:
                     connection.commit()
+                if self.pk:
                     self.__meta__['fields'][self.pk].value = db.lastrowid
 
     def delete(self, commit=True):
