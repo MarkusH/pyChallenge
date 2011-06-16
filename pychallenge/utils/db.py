@@ -77,7 +77,7 @@ class Query():
         self.table = kwargs.pop('table')
 
         if self.qtype == Query.QTYPE_SELECT:
-            self._select()
+            self._select(**kwargs)
 
         elif self.qtype == Query.QTYPE_INSERT:
             self._insert(**kwargs)
@@ -158,7 +158,11 @@ class Query():
                 '_fields': ", ".join(self._get_filter_fields(**ff))}
 
         elif self.qtype == Query.QTYPE_DELETE:
-            pass
+            statement = "DELETE FROM %(_table)s WHERE %(_pk)s"
+            replace = {
+                '_table': self.table,
+                '_pk': "%s = :%s" % (self.pk, self.pk)}
+            self.key_table.add(self.pk, self.modelfields[self.pk].value)
 
         elif self.qtype == Query.QTYPE_CREATE:
             statement = "CREATE TABLE `%(_table)s` (%(_fields)s);"
@@ -271,7 +275,10 @@ class Query():
         """
 
         """
-        pass
+        if 'pk' in kwargs.keys():
+            self.pk = kwargs.pop('pk')
+        else:
+            raise AttributeError("Updating a model needs an existing PK!")
 
     def _create(self, **kwargs):
         """

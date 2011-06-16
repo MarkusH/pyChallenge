@@ -43,7 +43,7 @@ class Model(object):
         """
         cls.__query__ = cls.__query__.filter(**kwargs)
         fields = [f for f, t in cls.__dict__.items() if isinstance(t, Field)]
-        
+
         ret = cls.__query__.run()
         if ret:
             statement, values = ret
@@ -77,7 +77,7 @@ class Model(object):
 
     @classmethod
     def commit(self):
-        connection.commit()        
+        connection.commit()
 
     def save(self, commit=True):
         """
@@ -118,13 +118,15 @@ class Model(object):
         :type commit: Boolean
         """
         if self.pk and self.__meta__['fields'][self.pk].value:
-            statement = "DELETE FROM %(_tablename)s WHERE %(_pk)s = :%(_pk)s" % {
-                '_tablename': self.__meta__['name'],
-                '_pk': self.pk,
-            }
-            db.execute(statement, {self.pk: self.__meta__['fields'][self.pk].value})
-            if commit:
-                connection.commit()
+            __query__ = Query(Query.QTYPE_DELETE, self.__meta__['fields'],
+                            table=self.__meta__['name'],
+                            pk=self.pk)
+            ret = __query__.run()
+            if ret:
+                statement, values = ret
+                db.execute(statement, values)
+                if commit:
+                    connection.commit()
 
     @classmethod
     def get(cls, **kwargs):
@@ -135,7 +137,7 @@ class Model(object):
         """
         cls.__query__ = cls.__query__.filter(**kwargs).limit(1)
         fields = [f for f, t in cls.__dict__.items() if isinstance(t, Field)]
-        
+
         ret = cls.__query__.run()
         if ret:
             statement, values = ret
@@ -149,7 +151,7 @@ class Model(object):
                     i += 1
                 instance = cls(**tmp)
                 result.append(copy.copy(instance))
-            return result if len(result) > 0 else None
+            return result[0] if len(result) > 0 else None
 
     @classmethod
     def query(cls, dry_run=False):
@@ -165,7 +167,7 @@ class Model(object):
             'table': cls.__name__.lower(),
             'dry_run': dry_run,
         }
-        cls.__query__= Query(Query.QTYPE_SELECT, fields, **kwargs)
+        cls.__query__ = Query(Query.QTYPE_SELECT, fields, **kwargs)
         return cls
 
     @classmethod
@@ -189,8 +191,8 @@ class Model(object):
         return cls
 
     @classmethod
-    def limit(self, count, offset=None):
-        cls.__query__ = cls.__query__.limit(cound, offset)
+    def limit(cls, count, offset=None):
+        cls.__query__ = cls.__query__.limit(count, offset)
         return cls
 
     def _set_meta_field(self, name, value=None, instance=None):
