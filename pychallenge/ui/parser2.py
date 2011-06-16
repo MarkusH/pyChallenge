@@ -111,11 +111,13 @@ def import_results(args):
                 dbRow = Match1on1(player1=player1.__dict__['__meta__']['fields']['player_id'].value, player2=player2.__dict__['__meta__']['fields']['player_id'].value, outcome=row[3])
                 dbRow.save(commit=False)
             if line % 100 == 0:
-                print "imported %d lines" % line
-                Match1on1.commit()
+                #print "imported %d lines" % line
+                sys.stdout.write("\r" + "Imported %d entries..." % line)
+                sys.stdout.flush()
+                #Match1on1.commit()
             line = line + 1
         Match1on1.commit()
-        print "Imported", line - 1, "entries."
+        print "\nImported", line - 1, "entries."
     except csv.Error, e:
         print "Error importing", args.file, "in line", line
 
