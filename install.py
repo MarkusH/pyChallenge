@@ -55,4 +55,9 @@ if __name__ == "__main__":
             `date` TEXT,
             `outcome` NUMERIC
         );
+        CREATE TABLE `rank_elo` (
+            `player_id` INTEGER PRIMARY KEY,
+            `game_id` NUMERIC,
+            `value` NUMERIC
+        );
         """)
