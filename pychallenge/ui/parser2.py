@@ -276,7 +276,7 @@ def parse():
 
     #compare two players
     p_compare = subparsers.add_parser('compare', help='Compare two players')
-    p_compare.add_argument('player1'. type=int, help='The ID of player 1')
+    p_compare.add_argument('player1', type=int, help='The ID of player 1')
     p_compare.add_argument('player2', type=int, help='The ID of player 2')
     p_compare.set_defaults(func=compare)
 
