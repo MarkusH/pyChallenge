@@ -20,7 +20,7 @@ class Model(object):
         self.__meta__['fields'] = {}
         self.__meta__['name'] = self.__class__.__name__.lower()
         self.__meta__['pk'] = None
-        for fname, ftype in self.__class__.__dict__.items():
+        for fname, ftype in self.__class__.__dict__.iteritems():
             if isinstance(ftype, Field):
                 # We need :py:func:`copy.copy` here, since ``ftype`` is the
                 # same for each model instance of the same class
@@ -29,6 +29,15 @@ class Model(object):
                 self._set_meta_field(fname, instance=new_field)
                 if isinstance(new_field, PK):
                     self.__meta__['pk'] = fname
+
+    def getfield(self, fieldname):
+        return self._get_meta_field(fieldname)
+
+    def getdata(self, fieldname):
+        return self.getfield(fieldname).value
+
+    def setdata(self, fieldname, value=None):
+        return self._set_meta_field(fieldname, value=value)
 
     @property
     def pk(self):
@@ -128,6 +137,10 @@ class Model(object):
                 db.execute(statement, values)
                 if commit:
                     connection.commit()
+
+    @classmethod
+    def clear():
+        pass
 
     @classmethod
     def get(cls, **kwargs):

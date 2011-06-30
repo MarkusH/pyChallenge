@@ -111,6 +111,14 @@ class FK(Numeric):
             return None
 
 
+    def related(self):
+        """
+        """
+        __import__(self.rev_table, fromlist=['pychallenge', 'utils', 'fields'])
+        const = self.ref_table()
+        return const
+
+
 class Date(Field):
     """
     This field class matches the SQLite field type "DATE"
