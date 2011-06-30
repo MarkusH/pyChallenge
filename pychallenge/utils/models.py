@@ -25,7 +25,8 @@ class Model(object):
                 # We need :py:func:`copy.copy` here, since ``ftype`` is the
                 # same for each model instance of the same class
                 new_field = copy.copy(ftype)
-                new_field.value = kwargs.get(fname, None)
+                if kwargs.get(fname, None):
+                    new_field.value = kwargs.get(fname, None)
                 self._set_meta_field(fname, instance=new_field)
                 if isinstance(new_field, PK):
                     self.__meta__['pk'] = fname

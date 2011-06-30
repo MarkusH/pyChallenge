@@ -1,7 +1,7 @@
 import sys
 import argparse
 from pychallenge.algorithms import elo
-from pychallenge.models import Match1on1, Player, RankElo
+from pychallenge.models import Match1on1, Player, Rank_Elo, Config
 import csv
 
 supported_games = ['chess']
@@ -59,6 +59,34 @@ def add_result(args):
     print "\tOutcome: ", outcome[args.outcome]
     print "------------------------------"
 
+def import_config(args):
+    """
+    Imports the config data of a csv file into the config table.
+    
+    :param args: A list with arguments from the argument parser
+    :type args: namespace
+    """
+    #Config.clear()
+    print "Importing config from", args.file
+
+    try:
+        line = 0
+        csvfile = open(args.file, 'rb')
+        sample = csvfile.read(1024)
+        csvfile.seek(0)
+        hasHeader = csv.Sniffer().has_header(sample)
+        reader = csv.reader(csvfile, delimiter=',')
+        for row in reader:
+            if line != 0 or (line == 0 and not hasHeader):
+                entry = Config(key=row[0], value=row[1])
+                entry.save(commit=False)
+
+            line = line + 1
+        Config.commit()
+        print "\nImported", line - 1, "config entries."
+    except csv.Error, e:
+        print "Error importing", args.file, "in line", line
+
 def import_results(args):
     """
     Imports the match data of a csv file into the result table.
@@ -84,37 +112,33 @@ def import_results(args):
         csvfile.seek(0)
         hasHeader = csv.Sniffer().has_header(sample)
         reader = csv.reader(csvfile, delimiter=',')
+        nicknames = []
         for row in reader:
             if line != 0 or (line == 0 and not hasHeader):
                 #print "Player1: " + row[1] + "; Player2: " + row[2] + "; " + outcome[float(row[3])]
 
                 player1 = Player.query().get(nickname=row[1])
-                #print player1
                 if player1 == None:
-                    #print "new player1: %s" % row[1]
                     player1 = Player(firstname="", lastname="", nickname=row[1])
                     player1.save(commit=False)
-                    rank1 = RankElo(player_id=player1.player_id)
-                    #print rank1
-                    #rank1.save()
+                    rank1 = Rank_Elo(player_id=player1.getdata('player_id'))#, value=1500)
+                    rank1.save(commit=False)
 
                 player2 = Player.query().get(nickname=row[2])
-                #print player2
+
                 if player2 == None:
-                    #print "new player2: %s" % row[2]
                     player2 = Player(firstname="", lastname="", nickname=row[2])
                     player2.save(commit=False)
-                    #rank2 = RankElo(player_id=player2.player_id)
-                    #print rank2
-                    #rank2.save()
+                    rank2 = Rank_Elo(player_id=player2.getdata('player_id'))#, value=1500)
+                    rank2.save(commit=False)
 
-                dbRow = Match1on1(player1=player1.__dict__['__meta__']['fields']['player_id'].value, player2=player2.__dict__['__meta__']['fields']['player_id'].value, outcome=row[3])
+                dbRow = Match1on1(player1=player1.getdata('player_id'), player2=player2.getdata('player_id'), outcome=row[3], date=row[0])
                 dbRow.save(commit=False)
+
             if line % 100 == 0:
-                #print "imported %d lines" % line
                 sys.stdout.write("\r" + "Imported %d entries..." % line)
                 sys.stdout.flush()
-                #Match1on1.commit()
+                # Match1on1.commit()
             line = line + 1
         Match1on1.commit()
         print "\nImported", line - 1, "entries."
@@ -123,6 +147,28 @@ def import_results(args):
 
 def update(args):
     def update_elo():
+        #matches = [ Match1on1(player1=1, player2=2, outcome=1, date=1), Match1on1(player1=1, player2=2, outcome=1, date=2) ]
+        matches = Match1on1.query().all(date__ge=1, date__le=5)
+
+        #rating1 = Rank_Elo(player_id=1, game_id=1, value=1500)
+        #rating1.save()
+        #rating2 = Rank_Elo(player_id=2, game_id=1, value=1500)
+        #rating2.save()
+        #Rank_Elo.commit()
+
+        k = 25 #Config.query().get(key="elo.chess.k.fide.default").value
+        for match in matches:
+            # print match.__meta__['fields']
+            rating1 = Rank_Elo.query().get(player_id=match.getdata('player1'))
+            rating2 = Rank_Elo.query().get(player_id=match.getdata('player2'))
+            func = lambda x:(1/(1+(10**(x/400.0))))
+            result = elo.elo1on1(rating1.getdata('value'), rating2.getdata('value'), match.getdata('outcome'), k, func)
+            print "Rating1", result[0], ", Rating2", result[1]
+            rating1.value = result[0]
+            rating2.value = result[1]
+            rating1.save(commit=False)
+            rating2.save(commit=False)
+            Rank_Elo.commit()
         print "elo_update..."
     """
     Updates the ratings for all players.
@@ -188,6 +234,12 @@ def parse():
     parser.add_argument('-a', '--algorithm', help='The algorithm for the following command. The default value is ELO')
     subparsers = parser.add_subparsers(help='sub-command help')
 
+    # import config
+    p_config = subparsers.add_parser('import-config', help='Update the config with a given config file')
+    p_config.add_argument('file', help='The config to import')
+    p_config.set_defaults(func=import_config)
+
+    # import results
     p_import = subparsers.add_parser('import-results', help='Import data to the result table from a csv file')
     p_import.add_argument('file', help='The file to import')
     p_import.set_defaults(func=import_results)
