@@ -1,15 +1,14 @@
 key,value
-glicko.initialC,15.8
+glicko.default.c,15.8
 glicko.initialRating,1500
 glicko.initialRD,350
-glicko.c.chess,15.8
+glicko.chess.c,15.8
 glicko2.initialMu,8.6347
 glicko2.initialPhi,2.0417
 glicko2.initialSigma,0.06
-glicko2.tau.chess,0.5
-elo.k.default,32
-elo.k1.chess,10
-elo.k2.chess,15
-elo.k3.chess,25
-elo.function.chess,(lambda x:(1/(1+(10**(x/400.0)))))
-elo.function.STT,(lambda x:(1/(1+(10**(x/200.0)))))
+glicko2.chess.tau,0.5
+elo.chess.function,(lambda x:(1/(1+(10**(x/400.0)))))
+elo.STT.function,(lambda x:(1/(1+(10**(x/200.0)))))
+elo.chess.k.fide.default,25
+elo.chessk.fide.strong,10
+elo.chess.k.fide.medium,15
