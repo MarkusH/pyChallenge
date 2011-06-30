@@ -44,8 +44,6 @@ def add_result(args):
     :param args: A list with arguments from the argument parser
     :type args: namespace
     """
-    if (not prepare_args(args)):
-        return
 
     outcome = {
         0.0: "Player 1 won",
@@ -94,8 +92,6 @@ def import_results(args):
     :param args: A list with arguments from the argument parser
     :type args: namespace
     """
-    if (not prepare_args(args)):
-        return
 
     outcome = {
         0.0: "Player 1 won",
@@ -176,8 +172,6 @@ def update(args):
     :param args: A list with arguments from the argument parser
     :type args: namespace
     """
-    if (not prepare_args(args)):
-        return
 
     update_funcs = {
         'elo' : update_elo
@@ -195,8 +189,6 @@ def match(args):
     :param args: A list with arguments from the argument parser
     :type args: namespace
     """
-    if (not prepare_args(args)):
-        return
     
     match_funcs = {
         'elo' : match_elo
@@ -215,8 +207,6 @@ def rating(args):
     :param args: A list with arguments from the argument parser
     :type args: namespace
     """
-    if (not prepare_args(args)):
-        return
 
     rating_funcs = {
         'elo' : rating_elo
@@ -281,4 +271,6 @@ def parse():
     p_compare.set_defaults(func=compare)
 
     args = parser.parse_args()
+    if (not prepare_args(args)):
+        return
     args.func(args)
