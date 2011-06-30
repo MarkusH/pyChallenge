@@ -179,6 +179,9 @@ def rating(args):
     print "The rating for player", args.player, "in", args.game, "using", args.algorithm, "is", "..."
     rating_funcs[args.algorithm]()
 
+def import_comp(args):
+    pass
+
 def parse():
     parser = argparse.ArgumentParser(prog='pyChallenge')
     parser.add_argument('-g', '--game', help='The game for the following command. The default value is chess.')
@@ -211,6 +214,10 @@ def parse():
     p_value.add_argument('player', type=int, help='ID of the player')
     p_value.set_defaults(func=rating)
 
+    #import comparison file
+    p_import_comp = subparsers.add_parser('import-comparison', help='Query the comparison of several players from a csv file')
+    p_import_comp.add_argument('file', help='The file to import')
+    p_import_comp.set_defaults(func=import_comp)
 
     args = parser.parse_args()
     args.func(args)
