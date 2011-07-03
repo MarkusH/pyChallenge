@@ -219,29 +219,43 @@ def import_comp(args):
     pass
 
 def compare(args):
-    rating1 = Rank_Elo.query().get(player_id=args.player1)
-    rating2 = Rank_Elo.query().get(player_id=args.player2)
-    if (rating1 == None):
-        print "Player with ID", args.player1, "not known."
-        return
-    if (rating2 == None):
-        print "Player with ID", args.player2, "not known."
-        return
-    elo1 = rating1.getdata('value')
-    elo2 = rating2.getdata('value')
-    if (elo1 > elo2):
-        print "Player 1 will (propably) win."
-        print "\tRank player1:", elo1
-        print "\tRank player2:", elo2
-        print "\tPlayer1 is", (elo1 - elo2), "points better."
+    def compare_elo():
+        rating1 = Rank_Elo.query().get(player_id=args.player1)
+        rating2 = Rank_Elo.query().get(player_id=args.player2)
+        if (rating1 == None):
+            print "Player with ID", args.player1, "not known."
+            return
+        if (rating2 == None):
+            print "Player with ID", args.player2, "not known."
+            return
+        elo1 = rating1.getdata('value')
+        elo2 = rating2.getdata('value')
+        if (elo1 > elo2):
+            print "Player 1 will (propably) win."
+            print "\tRank player1:", elo1
+            print "\tRank player2:", elo2
+            print "\tPlayer1 is", (elo1 - elo2), "points better."
 
-    if (elo2 > elo1):
-        print "Player 2 will (propably) win."
-        print "\tRank player1:", elo1
-        print "\tRank player2:", elo2
-        print "\tPlayer2 is", (elo2 - elo1), "points better."
-    if (elo1 == elo2):
-        print "Both players have the same elo rank (", elo1,")"
+        if (elo2 > elo1):
+            print "Player 2 will (propably) win."
+            print "\tRank player1:", elo1
+            print "\tRank player2:", elo2
+            print "\tPlayer2 is", (elo2 - elo1), "points better."
+        if (elo1 == elo2):
+            print "Both players have the same elo rank (", elo1,")"
+    """
+    Compares the rating of two given players.
+
+    :param args: A list with arguments from the argument parser
+    :type args: namespace
+    """
+
+    compare_funcs = {
+        'elo' : compare_elo
+    }
+
+    print "Comparing the rating of two players in", args.game, "with", args.algorithm
+    compare_funcs[args.algorithm]()
 
 def parse():
     parser = argparse.ArgumentParser(prog='pyChallenge')
