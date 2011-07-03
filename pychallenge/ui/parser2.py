@@ -144,7 +144,7 @@ def import_results(args):
 def update(args):
     def update_elo():
         #matches = [ Match1on1(player1=1, player2=2, outcome=1, date=1), Match1on1(player1=1, player2=2, outcome=1, date=2) ]
-        matches = Match1on1.query().all(date__ge=1, date__le=5)
+        matches = Match1on1.query().all(date__ge=1, date__le=1)
 
         #rating1 = Rank_Elo(player_id=1, game_id=1, value=1500)
         #rating1.save()
