@@ -137,35 +137,34 @@ def import_results(args):
                 # Match1on1.commit()
             line = line + 1
         Match1on1.commit()
-        print "\nImported", line - 1, "entries."
+        print "\rImported", line - 1, "entries."
     except csv.Error, e:
         print "Error importing", args.file, "in line", line
 
 def update(args):
     def update_elo():
-        #matches = [ Match1on1(player1=1, player2=2, outcome=1, date=1), Match1on1(player1=1, player2=2, outcome=1, date=2) ]
+        sys.stdout.write("Query matches...")
         matches = Match1on1.query().all(date__ge=1, date__le=1)
-
-        #rating1 = Rank_Elo(player_id=1, game_id=1, value=1500)
-        #rating1.save()
-        #rating2 = Rank_Elo(player_id=2, game_id=1, value=1500)
-        #rating2.save()
-        #Rank_Elo.commit()
+        sys.stdout.write("\rBeginning to update %d matches" % len(matches))
+        print ""
 
         k = 25 #Config.query().get(key="elo.chess.k.fide.default").value
+        updates = 0
         for match in matches:
-            # print match.__meta__['fields']
             rating1 = Rank_Elo.query().get(player_id=match.getdata('player1'))
             rating2 = Rank_Elo.query().get(player_id=match.getdata('player2'))
             func = lambda x:(1/(1+(10**(x/400.0))))
             result = elo.elo1on1(rating1.getdata('value'), rating2.getdata('value'), match.getdata('outcome'), k, func)
-            print "Rating1", result[0], ", Rating2", result[1]
             rating1.value = result[0]
             rating2.value = result[1]
             rating1.save(commit=False)
             rating2.save(commit=False)
             Rank_Elo.commit()
-        print "elo_update..."
+            updates = updates + 1
+            if updates % 50 == 0:
+                sys.stdout.write("\r" + "Updated %d matches..." % updates)
+                sys.stdout.flush()
+        print "\rUpdated", updates, "matches."
     """
     Updates the ratings for all players.
     
@@ -181,8 +180,16 @@ def update(args):
     update_funcs[args.algorithm]();
 
 def match(args):
-    def match_elo():
-        print "elo_match..."
+    def match_elo(player):
+        ratings = Rank_Elo.query().all()
+        best = None
+        deviation = 99999999
+        for r in ratings:
+            if (best is None or abs(r.getdata("value") - player.getdata("value")) < deviation) and r.getdata("player_id") != args.player:
+                best = r
+                deviation = abs(r.getdata("value") - player.getdata("value"))
+        return best
+
     """
     Finds the best opponent for a given player.
 
@@ -194,13 +201,24 @@ def match(args):
         'elo' : match_elo
     }
 
+    player = Rank_Elo.query().get(player_id=args.player)
+    if player is None:
+        print "Player", args.player, "is not known."
+
     print "Finding the best opponent for the player", args.player, "in", args.game, "using", args.algorithm
-    match_funcs[args.algorithm]();
-    print "Best Opponent:", "...."
+
+    opponent = match_funcs[args.algorithm](player);
+
+    if opponent is None:
+        print "No opponent found."
+        return
+
+    print "Best opponent for", args.player, "with rating", player.getdata("value"), "is:"
+    print "\t", opponent.getdata("player_id"), "with rating", opponent.getdata("value")
 
 def rating(args):
     def rating_elo():
-        print "rating_elo..."
+        pass
     """
     Queries the rating of a given player.
 
@@ -212,7 +230,11 @@ def rating(args):
         'elo' : rating_elo
     }
 
-    print "The rating for player", args.player, "in", args.game, "using", args.algorithm, "is", "..."
+    player = Rank_Elo.query().get(player_id=args.player)
+    if player is None:
+        print "Player", args.player, "is not known."
+
+    print "The rating for player %s in %s using %s is %d" % (args.player, args.game, args.algorithm, player.getdata("value"))
     rating_funcs[args.algorithm]()
 
 def import_comp(args):
