@@ -201,11 +201,12 @@ def match(args):
         'elo' : match_elo
     }
 
-    player = Rank_Elo.query().get(player_id=args.player)
+    player = rating(args)
+    #player = Rank_Elo.query().get(player_id=args.player)
     if player is None:
-        print "Player", args.player, "is not known."
+        return
 
-    print "Finding the best opponent for the player", args.player, "in", args.game, "using", args.algorithm
+    print "\tLooking for the best opponent for player %d..." % args.player
 
     opponent = match_funcs[args.algorithm](player);
 
@@ -213,8 +214,8 @@ def match(args):
         print "No opponent found."
         return
 
-    print "Best opponent for", args.player, "with rating", player.getdata("value"), "is:"
-    print "\t", opponent.getdata("player_id"), "with rating", opponent.getdata("value")
+    print "Best opponent for player %d with rating %d is:" % (args.player, player.getdata("value"))
+    print "\tPlayer %d with rating %d." % (opponent.getdata("player_id"), opponent.getdata("value"))
 
 def rating(args):
     def rating_elo():
@@ -241,9 +242,11 @@ def rating(args):
 
     if player is None:
         print "The rating for player %s in %s using %s is not known." % (args.player, args.game, args.algorithm)
-        return
-
-    print "The rating for player %s in %s using %s is %d" % (args.player, args.game, args.algorithm, player.getdata("value"))
+        return None
+    else:
+        print "The rating for player %s in %s using %s is %d." % (args.player, args.game, args.algorithm, player.getdata("value"))
+        return player
+    
 
 def import_comp(args):
     pass
@@ -338,4 +341,6 @@ def parse():
     args = parser.parse_args()
     if (not prepare_args(args)):
         return
+    print ""
     args.func(args)
+    print ""
