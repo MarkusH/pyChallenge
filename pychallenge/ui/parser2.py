@@ -218,7 +218,12 @@ def match(args):
 
 def rating(args):
     def rating_elo():
-        pass
+        return Rank_Elo.query().get(player_id=args.player)
+    def rating_glicko():
+        return None
+    def rating_glicko2():
+        return None
+
     """
     Queries the rating of a given player.
 
@@ -227,15 +232,18 @@ def rating(args):
     """
 
     rating_funcs = {
-        'elo' : rating_elo
+        'elo' : rating_elo,
+        'glicko' : rating_glicko,
+        'glicko2' : rating_glicko2
     }
 
-    player = Rank_Elo.query().get(player_id=args.player)
+    player = rating_funcs[args.algorithm]()
+
     if player is None:
-        print "Player", args.player, "is not known."
+        print "The rating for player %s in %s using %s is not known." % (args.player, args.game, args.algorithm)
+        return
 
     print "The rating for player %s in %s using %s is %d" % (args.player, args.game, args.algorithm, player.getdata("value"))
-    rating_funcs[args.algorithm]()
 
 def import_comp(args):
     pass
@@ -245,26 +253,26 @@ def compare(args):
         rating1 = Rank_Elo.query().get(player_id=args.player1)
         rating2 = Rank_Elo.query().get(player_id=args.player2)
         if (rating1 == None):
-            print "Player with ID", args.player1, "not known."
+            print "Player with ID %s not known." % args.player1
             return
         if (rating2 == None):
-            print "Player with ID", args.player2, "not known."
+            print "Player with ID %s not known." % args.player2
             return
         elo1 = rating1.getdata('value')
         elo2 = rating2.getdata('value')
         if (elo1 > elo2):
-            print "Player 1 will (propably) win."
-            print "\tRank player1:", elo1
-            print "\tRank player2:", elo2
-            print "\tPlayer1 is", (elo1 - elo2), "points better."
+            print "\tPlayer %s will (probably) win." % args.player1
+            print "\tRank player %s: %d" % (args.player1, elo1)
+            print "\tRank player %s: %d" % (args.player2, elo2)
+            print "\tPlayer %s is %d points better." % (args.player1, (elo1 - elo2))
 
         if (elo2 > elo1):
-            print "Player 2 will (propably) win."
-            print "\tRank player1:", elo1
-            print "\tRank player2:", elo2
-            print "\tPlayer2 is", (elo2 - elo1), "points better."
+            print "\tPlayer %s will (probably) win." % args.player2
+            print "\tRank player %s: %d" % (args.player1, elo1)
+            print "\tRank player %s: %d" % (args.player2, elo2)
+            print "\tPlayer %s is %d points better." % (args.player2, (elo2 -elo1))
         if (elo1 == elo2):
-            print "Both players have the same elo rank (", elo1,")"
+            print "Both players have the same elo rank (%d)" % elo1
     """
     Compares the rating of two given players.
 
@@ -276,7 +284,11 @@ def compare(args):
         'elo' : compare_elo
     }
 
-    print "Comparing the rating of two players in", args.game, "with", args.algorithm
+    if args.player1 is args.player2:
+        print "You cannot compare player %s with himself" % args.player1
+        return
+
+    print "Comparing the rating of two players in %s with %s:" % (args.game, args.algorithm)
     compare_funcs[args.algorithm]()
 
 def parse():
