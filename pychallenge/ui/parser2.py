@@ -202,7 +202,6 @@ def match(args):
     }
 
     player = rating(args)
-    #player = Rank_Elo.query().get(player_id=args.player)
     if player is None:
         return
 
@@ -230,6 +229,7 @@ def rating(args):
 
     :param args: A list with arguments from the argument parser
     :type args: namespace
+    :return: The player for the given player id (in args)
     """
 
     rating_funcs = {
