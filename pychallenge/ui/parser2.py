@@ -260,18 +260,13 @@ def compare(args):
             return
         elo1 = rating1.getdata('value')
         elo2 = rating2.getdata('value')
-        if (elo1 > elo2):
-            print "\tPlayer %s will (probably) win." % args.player1
+        if elo1 != elo2:
+            winning_player = args.player1 if elo1 > elo2 else args.player2
+            print "\tPlayer %s will (probably) win." % winning_player
             print "\tRank player %s: %d" % (args.player1, elo1)
             print "\tRank player %s: %d" % (args.player2, elo2)
-            print "\tPlayer %s is %d points better." % (args.player1, (elo1 - elo2))
-
-        if (elo2 > elo1):
-            print "\tPlayer %s will (probably) win." % args.player2
-            print "\tRank player %s: %d" % (args.player1, elo1)
-            print "\tRank player %s: %d" % (args.player2, elo2)
-            print "\tPlayer %s is %d points better." % (args.player2, (elo2 -elo1))
-        if (elo1 == elo2):
+            print "\tPlayer %s is %d points better." % (winning_player, abs(elo1 - elo2))
+        else:
             print "Both players have the same elo rank (%d)" % elo1
     """
     Compares the rating of two given players.
