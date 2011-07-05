@@ -52,12 +52,17 @@ if __name__ == "__main__":
             `game_id` NUMERIC,
             `player1` NUMERIC,
             `player2` NUMERIC,
-            `date` TEXT,
+            `date` NUMERIC,
             `outcome` NUMERIC
         );
         CREATE TABLE `rank_elo` (
-            `player_id` INTEGER PRIMARY KEY,
+            `id` INTEGER PRIMARY KEY,
+            `player_id` NUMERIC,
             `game_id` NUMERIC,
             `value` NUMERIC
+        );
+        CREATE TABLE `config` (
+            `key` TEXT,
+            `value` TEXT
         );
         """)

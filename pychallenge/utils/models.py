@@ -25,8 +25,8 @@ class Model(object):
                 # We need :py:func:`copy.copy` here, since ``ftype`` is the
                 # same for each model instance of the same class
                 new_field = copy.copy(ftype)
-                if kwargs.get(fname, None):
-                    new_field.value = kwargs.get(fname)
+                if kwargs.get(fname, None) != None:
+                    new_field.value = kwargs.get(fname, None)
                 self._set_meta_field(fname, instance=new_field)
                 if isinstance(new_field, PK):
                     self.__meta__['pk'] = fname
@@ -118,6 +118,7 @@ class Model(object):
                 db.execute(statement, values)
                 if commit:
                     connection.commit()
+                if self.pk:
                     self.__meta__['fields'][self.pk].value = db.lastrowid
 
     def delete(self, commit=True):

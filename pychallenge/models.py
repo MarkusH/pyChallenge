@@ -1,5 +1,8 @@
 from pychallenge.utils import models
 
+class Config(models.Model):
+    key = models.Text()
+    value = models.Text()        
 
 class Algorithm(models.Model):
     algorithm_id = models.PK()
@@ -12,7 +15,7 @@ class Match1on1(models.Model):
     game_id = models.FK('.....')
     player1 = models.FK('Player')
     player2 = models.FK('Player')
-    date = models.Text()
+    date = models.Numeric()
     outcome = models.Numeric()
 
 class Player(models.Model):
@@ -21,7 +24,8 @@ class Player(models.Model):
     lastname = models.Text()
     nickname = models.Text()
 
-class RankElo(models.Model):
+class Rank_Elo(models.Model):
+    id = models.PK()
     player_id = models.FK('Player')
     game_id = models.FK('Game')
     value = models.Numeric(value=1500)
