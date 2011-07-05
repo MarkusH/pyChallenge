@@ -65,7 +65,7 @@ def import_config(args):
     :param args: A list with arguments from the argument parser
     :type args: namespace
     """
-    #Config.clear()
+    Config.clear()
     print "Importing config from", args.file
 
     try:
@@ -149,7 +149,7 @@ def update(args):
         sys.stdout.write("\rBeginning to update %d matches" % len(matches))
         print ""
 
-        k = 25 #Config.query().get(key="elo.chess.k.fide.default").value
+        k = Config.query().get(key="elo.chess.k.fide.default").value #k = 25
         updates = 0
         for match in matches:
             rating1 = Rank_Elo.query().get(player_id=match.getdata('player1'))
@@ -238,25 +238,6 @@ def import_comp(args):
     pass
 
 def compare(args):
-    def compare_elo():
-        rating1 = Rank_Elo.query().get(player_id=args.player1)
-        rating2 = Rank_Elo.query().get(player_id=args.player2)
-        if (rating1 == None):
-            print "Player with ID %s not known." % args.player1
-            return
-        if (rating2 == None):
-            print "Player with ID %s not known." % args.player2
-            return
-        elo1 = rating1.getdata('value')
-        elo2 = rating2.getdata('value')
-        if elo1 != elo2:
-            winning_player = args.player1 if elo1 > elo2 else args.player2
-            print "\tPlayer %s will (probably) win." % winning_player
-            print "\tRank player %s: %d" % (args.player1, elo1)
-            print "\tRank player %s: %d" % (args.player2, elo2)
-            print "\tPlayer %s is %d points better." % (winning_player, abs(elo1 - elo2))
-        else:
-            print "Both players have the same elo rank (%d)" % elo1
     """
     Compares the rating of two given players.
 
@@ -264,16 +245,34 @@ def compare(args):
     :type args: namespace
     """
 
-    compare_funcs = {
-        'elo' : compare_elo
-    }
-
     if args.player1 is args.player2:
         print "You cannot compare player %s with himself" % args.player1
         return
 
     print "Comparing the rating of two players in %s with %s:" % (args.game, args.algorithm)
-    compare_funcs[args.algorithm]()
+
+    ratings = utils.get_rating(args);
+    if ratings is None:
+        print "Both players are not known!"
+        return
+
+    if (ratings[0] == None):
+        print "Player with ID %s not known." % args.player1
+        return
+    if (ratings[1] == None):
+        print "Player with ID %s not known." % args.player2
+        return
+
+    value1 = ratings[0].getdata('value')
+    value2 = ratings[1].getdata('value')
+    if value1 != value2:
+        winning_player = args.player1 if value1 > value2 else args.player2
+        print "\tPlayer %s will (probably) win." % winning_player
+        print "\tRank player %s: %d" % (args.player1, value1)
+        print "\tRank player %s: %d" % (args.player2, value2)
+        print "\tPlayer %s is %d points better." % (winning_player, abs(value1 - value2))
+    else:
+        print "Both players have the same elo rank (%d)" % value1
 
 def parse():
     parser = argparse.ArgumentParser(prog='pyChallenge')
