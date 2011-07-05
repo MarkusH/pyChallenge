@@ -65,7 +65,7 @@ def import_config(args):
     :param args: A list with arguments from the argument parser
     :type args: namespace
     """
-    Config.clear()
+    Config.query().truncate()
     print "Importing config from", args.file
 
     try:
