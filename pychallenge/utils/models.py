@@ -25,7 +25,8 @@ class Model(object):
                 # We need :py:func:`copy.copy` here, since ``ftype`` is the
                 # same for each model instance of the same class
                 new_field = copy.copy(ftype)
-                new_field.value = kwargs.get(fname, None)
+                if kwargs.get(fname, None):
+                    new_field.value = kwargs.get(fname)
                 self._set_meta_field(fname, instance=new_field)
                 if isinstance(new_field, PK):
                     self.__meta__['pk'] = fname
@@ -139,8 +140,22 @@ class Model(object):
                     connection.commit()
 
     @classmethod
-    def clear():
-        pass
+    def drop(cls):
+        __query__ = Query(Query.QTYPE_DROP, {}, table=cls.__name__.lower())
+        ret = __query__.run()
+        if ret:
+            statement, values = ret
+            db.execute(statement, values)
+            connection.commit()
+
+    @classmethod
+    def truncate(cls):
+        __query__ = Query(Query.QTYPE_TRUNCATE, {}, table=cls.__name__.lower())
+        ret = __query__.run()
+        if ret:
+            statement, values = ret
+            db.execute(statement, values)
+            connection.commit()
 
     @classmethod
     def get(cls, **kwargs):

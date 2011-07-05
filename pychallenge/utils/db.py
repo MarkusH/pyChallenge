@@ -55,6 +55,8 @@ class Query():
     QTYPE_UPDATE = 3
     QTYPE_DELETE = 4
     QTYPE_CREATE = 5
+    QTYPE_TRUNCATE = 6
+    QTYPE_DROP = 7
 
     AGGREGATE = ['avg', 'count', 'min', 'max']
 
@@ -80,7 +82,7 @@ class Query():
             self._select(**kwargs)
 
         elif self.qtype == Query.QTYPE_INSERT:
-            self._insert(**kwargs)
+            pass
 
         elif self.qtype == Query.QTYPE_UPDATE:
             self._update(**kwargs)
@@ -89,12 +91,18 @@ class Query():
             self._delete(**kwargs)
 
         elif self.qtype == Query.QTYPE_CREATE:
-            self._create(**kwargs)
+            pass
+
+        elif self.qtype == Query.QTYPE_TRUNCATE:
+            pass
+
+        elif self.qtype == Query.QTYPE_DROP:
+            pass
 
         else:
             raise AttributeError("qtype must be one of QTYPE_SELECT, "
                 "QTYPE_INSERT, QTYPE_UPDATE, QTYPE_DELETE, "
-                "QTYPE_CREATE")
+                "QTYPE_CREATE", "QTYPE_TRUNCATE", "QTYPE_DROP")
 
     def run(self):
         def match(x):
@@ -179,6 +187,14 @@ class Query():
                 '_fields': ", ".join(flds),
             }
 
+        elif self.qtype == Query.QTYPE_TRUNCATE:
+            statement = "DELETE FROM %(_table)s"
+            replace = {'_table': self.table}
+
+        elif self.qtype == Query.QTYPE_DROP:
+            statement = "DROP TABLE %(_table)s"
+            replace = {'_table': self.table}
+
         if self.dry_run:
             print statement % replace
             if settings.SETTINGS['DEBUG']:
@@ -257,12 +273,6 @@ class Query():
         self.select_fields = tmp.keys()
         self.select_fields.sort()
 
-    def _insert(self, **kwargs):
-        """
-
-        """
-        pass
-
     def _update(self, **kwargs):
         """
 
@@ -280,12 +290,6 @@ class Query():
             self.pk = kwargs.pop('pk')
         else:
             raise AttributeError("Updating a model needs an existing PK!")
-
-    def _create(self, **kwargs):
-        """
-
-        """
-        pass
 
     def _get_filter_fields(self, **kwargs):
 
