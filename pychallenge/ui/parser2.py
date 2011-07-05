@@ -224,7 +224,6 @@ def rating(args):
 
     :param args: A list with arguments from the argument parser
     :type args: namespace
-    :return: The player for the given player id (in args)
     """
 
     player = utils.get_rating(args)
