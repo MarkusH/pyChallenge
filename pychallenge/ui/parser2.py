@@ -2,6 +2,7 @@ import sys
 import argparse
 from pychallenge.algorithms import elo
 from pychallenge.models import Match1on1, Player, Rank_Elo, Config
+from pychallenge.ui import utils
 import csv
 
 supported_games = ['chess']
@@ -201,11 +202,12 @@ def match(args):
         'elo' : match_elo
     }
 
-    player = rating(args)
+    player = utils.get_rating(args)
     if player is None:
+        print "Player with id %s is not known." % args.player
         return
 
-    print "\tLooking for the best opponent for player %d..." % args.player
+    print "Looking for the best opponent for player %d..." % args.player
 
     opponent = match_funcs[args.algorithm](player);
 
@@ -217,13 +219,6 @@ def match(args):
     print "\tPlayer %d with rating %d." % (opponent.getdata("player_id"), opponent.getdata("value"))
 
 def rating(args):
-    def rating_elo():
-        return Rank_Elo.query().get(player_id=args.player)
-    def rating_glicko():
-        return None
-    def rating_glicko2():
-        return None
-
     """
     Queries the rating of a given player.
 
@@ -232,20 +227,12 @@ def rating(args):
     :return: The player for the given player id (in args)
     """
 
-    rating_funcs = {
-        'elo' : rating_elo,
-        'glicko' : rating_glicko,
-        'glicko2' : rating_glicko2
-    }
-
-    player = rating_funcs[args.algorithm]()
+    player = utils.get_rating(args)
 
     if player is None:
         print "The rating for player %s in %s using %s is not known." % (args.player, args.game, args.algorithm)
-        return None
     else:
         print "The rating for player %s in %s using %s is %d." % (args.player, args.game, args.algorithm, player.getdata("value"))
-        return player
     
 
 def import_comp(args):
