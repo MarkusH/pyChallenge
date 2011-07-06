@@ -1,5 +1,6 @@
 import sys
 import argparse
+import pychallenge
 from pychallenge.algorithms import elo
 from pychallenge.models import Match1on1, Player, Rank_Elo, Config
 from pychallenge.ui import utils
@@ -52,11 +53,30 @@ def add_result(args):
         0.5: "Draw"
     }
 
-    print "Adding a result for", args.game
+    print "Adding a result for %s" % args.game
     print "\tPlayer 1:", args.player1
     print "\tPlayer 2:", args.player2
     print "\tOutcome: ", outcome[args.outcome]
-    print "------------------------------"
+    print "\tDate: ", args.date
+
+    player1 = Player.query().get(nickname=args.player1)
+    if player1 == None:
+        player1 = Player(firstname="", lastname="", nickname=args.player1)
+        player1.save(commit=False)
+        rank1 = Rank_Elo(player_id=player1.getdata('player_id'))
+        rank1.save(commit=False)
+
+    player2 = Player.query().get(nickname=args.player2)
+    if player2 == None:
+        player2 = Player(firstname="", lastname="", nickname=args.player2)
+        player2.save(commit=False)
+        rank2 = Rank_Elo(player_id=player2.getdata('player_id'))
+        rank2.save(commit=False)
+
+    dbRow = Match1on1(player1=player1.getdata('player_id'), player2=player2.getdata('player_id'), outcome=args.outcome, date=args.date)
+    dbRow.save(commit=True)
+
+    print "Done"
 
 def import_config(args):
     """
@@ -278,6 +298,8 @@ def parse():
     parser = argparse.ArgumentParser(prog='pyChallenge')
     parser.add_argument('-g', '--game', help='The game for the following command. The default value is chess.')
     parser.add_argument('-a', '--algorithm', help='The algorithm for the following command. The default value is ELO')
+    parser.add_argument('-v', '--version', action='version',
+        version="%s version: %s" % ("%(prog)s", pychallenge.get_version()), help='Prints out the version information of pyChallenge')
     subparsers = parser.add_subparsers(help='sub-command help')
 
     # import config
@@ -295,7 +317,7 @@ def parse():
     p_add_result.add_argument('player1', type=int, help='ID of player 1')
     p_add_result.add_argument('player2', type=int, help='ID of player 2')
     p_add_result.add_argument('outcome', type=float, help='Outcome of the game: 0 = player 1 lost; 0.5 = draw; 1 = player 1 won')
-    #p_add_result.add_argument('date', help='The date of the game')
+    p_add_result.add_argument('date', type=int, help='The date of the game')
     p_add_result.set_defaults(func=add_result)
 
     # update
@@ -312,12 +334,12 @@ def parse():
     p_value.add_argument('player', type=int, help='ID of the player')
     p_value.set_defaults(func=rating)
 
-    #import comparison file
+    # import comparison file
     p_import_comp = subparsers.add_parser('import-comparison', help='Query the comparison of several players from a csv file')
     p_import_comp.add_argument('file', help='The file to import')
     p_import_comp.set_defaults(func=import_comp)
 
-    #compare two players
+    # compare two players
     p_compare = subparsers.add_parser('compare', help='Compare two players')
     p_compare.add_argument('player1', type=int, help='ID of player 1')
     p_compare.add_argument('player2', type=int, help='ID of player 2')
