@@ -59,23 +59,17 @@ def add_result(args):
     print "\tOutcome: ", outcome[args.outcome]
     print "\tDate: ", args.date
 
-    player1 = Player.query().get(nickname=args.player1)
-    if player1 == None:
-        player1 = Player(firstname="", lastname="", nickname=args.player1)
-        player1.save(commit=False)
-        rank1 = Rank_Elo(player_id=player1.getdata('player_id'))
-        rank1.save(commit=False)
+    player1 = utils.add_player(args.player1, commit=False)
+    player2 = utils.add_player(args.player2, commit=False)
 
-    player2 = Player.query().get(nickname=args.player2)
-    if player2 == None:
-        player2 = Player(firstname="", lastname="", nickname=args.player2)
-        player2.save(commit=False)
-        rank2 = Rank_Elo(player_id=player2.getdata('player_id'))
-        rank2.save(commit=False)
+    pid1 = player1.getdata('player_id')
+    pid2 = player2.getdata('player_id')
 
-    dbRow = Match1on1(player1=player1.getdata('player_id'), player2=player2.getdata('player_id'), outcome=args.outcome, date=args.date)
-    dbRow.save(commit=True)
+    dbRow = Match1on1(player1=pid1, player2=pid2, outcome=args.outcome, date=args.date)
+    dbRow.save(commit=False)
 
+    print "Player id for %s is %s" % (args.player1, pid1)
+    print "Player id for %s is %s" % (args.player2, pid2)
     print "Done"
 
 def import_config(args):
@@ -132,22 +126,8 @@ def import_results(args):
         nicknames = []
         for row in reader:
             if line != 0 or (line == 0 and not hasHeader):
-                #print "Player1: " + row[1] + "; Player2: " + row[2] + "; " + outcome[float(row[3])]
-
-                player1 = Player.query().get(nickname=row[1])
-                if player1 == None:
-                    player1 = Player(firstname="", lastname="", nickname=row[1])
-                    player1.save(commit=False)
-                    rank1 = Rank_Elo(player_id=player1.getdata('player_id'))#, value=1500)
-                    rank1.save(commit=False)
-
-                player2 = Player.query().get(nickname=row[2])
-
-                if player2 == None:
-                    player2 = Player(firstname="", lastname="", nickname=row[2])
-                    player2.save(commit=False)
-                    rank2 = Rank_Elo(player_id=player2.getdata('player_id'))#, value=1500)
-                    rank2.save(commit=False)
+                player1 = utils.add_player(row[1], commit=False)
+                player2 = utils.add_player(row[2], commit=False)
 
                 dbRow = Match1on1(player1=player1.getdata('player_id'), player2=player2.getdata('player_id'), outcome=row[3], date=row[0])
                 dbRow.save(commit=False)
@@ -169,7 +149,7 @@ def update(args):
         sys.stdout.write("\rBeginning to update %d matches" % len(matches))
         print ""
 
-        k = Config.query().get(key="elo.chess.k.fide.default").value #k = 25
+        k = float(Config.query().get(key="elo.chess.k.fide.default").getdata("value"))
         updates = 0
         for match in matches:
             rating1 = Rank_Elo.query().get(player_id=match.getdata('player1'))

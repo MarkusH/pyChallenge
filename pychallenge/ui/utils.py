@@ -31,3 +31,19 @@ def get_rating(args):
         return (rating_funcs[args.algorithm](args.player1), rating_funcs[args.algorithm](args.player2))
 
     return rating_funcs[args.algorithm]()
+
+def add_player(nickname, commit=False):
+    """
+    Adds a player and the corresponding ranks to the database. If the player
+    already exsits, this function does nothing.
+    :param nickname: The nickname of the player to add
+    :type player: int
+    :return: The player model
+    """
+    player = Player.query().get(nickname=nickname)
+    if player == None:
+        player = Player(firstname="", lastname="", nickname=nickname)
+        player.save(commit)
+        rank = Rank_Elo(player_id=player.getdata('player_id'))
+        rank.save(commit)
+    return player
