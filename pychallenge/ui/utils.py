@@ -2,7 +2,7 @@
 import sys
 from pychallenge.models import Match1on1, Player, Rank_Elo, Rank_Glicko, Config
 
-def get_rating(args):
+def get_rating(args, p1=None, p2=None):
     def rating_elo(player):
         if player is None:
             return None
@@ -21,7 +21,9 @@ def get_rating(args):
  
     :param args: A list with arguments from the argument parser
     :type args: namespace
-    :return: The player for the given player id (in args)
+    :param p1: The nickname of a player
+    :param p2: The nickname of another player
+    :return: The rank for the given player(s) (either in args or in p1/p2)
     """
 
     rating_funcs = {
@@ -30,8 +32,11 @@ def get_rating(args):
         'glicko2' : rating_glicko2
     }
 
-
-    if args.__dict__.get("player", None):
+    if p1 is not None and p2 is not None:
+        player1 = Player.query().get(nickname=p1)
+        player2 = Player.query().get(nickname=p2)
+        return (rating_funcs[args.algorithm](player1), rating_funcs[args.algorithm](player2))
+    elif args.__dict__.get("player", None):
         player = Player.query().get(nickname=args.player)
         if player is None:
             return None
@@ -41,7 +46,7 @@ def get_rating(args):
         player2 = Player.query().get(nickname=args.player2)
         return (rating_funcs[args.algorithm](player1), rating_funcs[args.algorithm](player2))
 
-    return rating_funcs[args.algorithm]()
+    return None
 
 def add_player(nickname, firstname="", lastname="", commit=False):
     """

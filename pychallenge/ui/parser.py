@@ -268,7 +268,51 @@ def rating(args):
     
 
 def import_comp(args):
-    pass
+    """
+    Reads player constellations from an input file and writes the result to a specified output file.
+
+    :param args: A list with arguments from the argument parser
+    :type args: namespace
+    """
+    try:
+        print "Open %s and write into %s..." % (args.ifile, args.ofile)
+        print "\tThis may take some time depending of the size of the input file."
+        line = 0
+        csvfile = open(args.ifile, 'rb')
+        sample = csvfile.read(1024)
+        csvfile.seek(0)
+        hasHeader = csv.Sniffer().has_header(sample)
+        reader = csv.reader(csvfile, delimiter=',')
+        file = open(args.ofile, 'w')
+        if hasHeader:
+            print "\tFirst line of csv file is ignored. It seems to be a header row.\n"
+
+        for row in reader:
+            if line != 0 or (line == 0 and not hasHeader):
+                ratings = utils.get_rating(args, row[1], row[2])
+                if ratings[0] is None or ratings[1] is None:
+                    continue
+                value1 = ratings[0].getdata('value')
+                value2 = ratings[1].getdata('value')
+                if (value1 > value2):
+                    outcome = "1"
+                elif (value1 < value2):
+                    outcome = "0"
+                else:
+                    outcome = "0.5"
+                file.write("%s,%s,%s,%s\n" % (row[0], row[1], row[2], outcome))
+            elif line == 0 and hasHeader:
+                file.write("\"%s\",\"%s\",\"%s\",\"Statistically most possible outcome\"\n" % (row[0], row[1], row[2]))
+            if line % 13 == 0:
+                sys.stdout.write("\r" + "Wrote %d entries to the output file..." % line)
+                sys.stdout.flush()
+            line = line + 1
+
+    except csv.Error, e:
+        print "An error occured during reading the file."
+
+    file.close()
+    print ""
 
 def compare(args):
     """
@@ -408,8 +452,9 @@ def parse():
     p_worst.set_defaults(func=worst)
 
     # import comparison file
-    p_import_comp = subparsers.add_parser('import-comparison', help='Query the comparison of several players from a csv file')
-    p_import_comp.add_argument('file', help='The file to import')
+    p_import_comp = subparsers.add_parser('import-comparison', help='Query the comparison of several players from a csv file and write the result to a csv file')
+    p_import_comp.add_argument('ifile', help='The file to import')
+    p_import_comp.add_argument('ofile', help='Thel output file')
     p_import_comp.set_defaults(func=import_comp)
 
     # compare two players
