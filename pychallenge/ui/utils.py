@@ -74,3 +74,28 @@ def add_player(nickname, firstname="", lastname="", commit=False):
         rank.save(commit)
         
     return player, created
+
+#TODO: make this dependend on algorithm (and game)?
+def get_config(args):
+    """
+    Returns a dictionary of config values
+    """
+
+    dict = {}
+
+    # ELO
+    func = Config.query().get(key="elo.chess.function")
+    if func is None:
+        func = lambda x:(1/(1+(10**(x/400.0))))
+    else:
+        func = eval(func.getdata("value"))
+    dict["elo.chess.function"] = func
+    
+    k = Config.query().get(key="elo.chess.k.fide.default")
+    if k is None:
+        k = 25
+    else:
+        k = float(k.getdata("value"))
+    dict["elo.chess.k"] = k
+
+    return dict

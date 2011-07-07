@@ -162,16 +162,9 @@ def update(args):
         print ""
 
         # constants
-        func = Config.query().get(key="elo.chess.function")
-        if func is None:
-            func = lambda x:(1/(1+(10**(x/400.0))))
-        else:
-            eval(func.getdata("value"))
-        k = Config.query().get(key="elo.chess.k.fide.default")
-        if k is None:
-            k = 25
-        else:
-            k = float(k.getdata("value"))
+        conf = utils.get_config(args)
+        k = conf["elo.chess.k"]
+        func = conf["elo.chess.function"]
 
         # Query all ratings and store it in a dictionary. This is done to store
         # the newest rating data in memory. We do not have to commit.
@@ -268,9 +261,9 @@ def rating(args):
         print "The rating for player %s in %s using %s is %d." % (args.player, args.game, args.algorithm, player.getdata("value"))
     
 
-def import_comp(args):
+def predict(args):
     """
-    Reads player constellations from an input file and writes the result to a specified output file.
+    Reads match constellations from an input file and writes the results to a specified output file.
 
     :param args: A list with arguments from the argument parser
     :type args: namespace
@@ -283,6 +276,8 @@ def import_comp(args):
         return
 
     try:
+        modes = { True: "incremental", False: "non-incremental" }
+        print "Predicting the matches in %s mode" % modes[args.incremental]
         print "Open %s and write into %s..." % (args.ifile, args.ofile)
         print "\tThis may take some time depending of the size of the input file."
         line = 0
@@ -295,20 +290,40 @@ def import_comp(args):
         if hasHeader:
             print "\tFirst line of csv file is ignored. It seems to be a header row.\n"
 
+        # constants
+        conf = utils.get_config(args)
+        k = conf["elo.chess.k"]
+        func = conf["elo.chess.function"]
+
+        # Query all ratings and store it in a dictionary. This is done for
+        # faster access and on-the-fly calculation of new elo values
+        ratings = Rank_Elo.query().all()
+        rdict = {}
+        for r in ratings:
+            player = Player.query().get(player_id=r.getdata("player_id"))
+            rdict[player.getdata("nickname")] = r
+
         for row in reader:
             if line != 0 or (line == 0 and not hasHeader):
-                ratings = utils.get_rating(args, row[1], row[2])
+                ratings = (rdict.get(row[1], None), rdict.get(row[2], None))
                 if ratings[0] is None or ratings[1] is None:
                     continue
                 value1 = ratings[0].getdata('value')
                 value2 = ratings[1].getdata('value')
+
                 if (value1 > value2):
-                    outcome = "1"
+                    outcome = 1
                 elif (value1 < value2):
-                    outcome = "0"
+                    outcome = 0
                 else:
-                    outcome = "0.5"
-                ofile.write("%s,%s,%s,%s\n" % (row[0], row[1], row[2], outcome))
+                    outcome = 0.5
+
+                if args.incremental:
+                    result = elo.elo1on1(value1, value2, outcome, k, func)
+                    ratings[0].value = result[0]
+                    ratings[1].value = result[1]
+
+                ofile.write("%s,%s,%s,%s\n" % (row[0], row[1], row[2], str(outcome)))
             elif line == 0 and hasHeader:
                 ofile.write("\"%s\",\"%s\",\"%s\",\"Statistically most possible outcome\"\n" % (row[0], row[1], row[2]))
             if line % 13 == 0:
@@ -459,11 +474,12 @@ def parse():
     p_worst.add_argument('amount', type=int, default=1, help='The number of player to query. 10 for Worst 10')
     p_worst.set_defaults(func=worst)
 
-    # import comparison file
-    p_import_comp = subparsers.add_parser('import-comparison', help='Query the comparison of several players from a csv file and write the result to a csv file')
-    p_import_comp.add_argument('ifile', help='The file to import')
-    p_import_comp.add_argument('ofile', help='Thel output file')
-    p_import_comp.set_defaults(func=import_comp)
+    # predict
+    p_predict = subparsers.add_parser('predict', help='Predict the matches in csv file and write the results to another csv file')
+    p_predict.add_argument('ifile', help='The file to import')
+    p_predict.add_argument('ofile', help='The output file')
+    p_predict.add_argument('-i', '--incremental', action="store_true", help='If true, updates the rating after each match on-the-fly')
+    p_predict.set_defaults(func=predict)
 
     # compare two players
     p_compare = subparsers.add_parser('compare', help='Compare two players')
