@@ -1,0 +1,14 @@
+@import url("nature.css");
+
+body {
+    background-color: #FFF;
+}
+div.footer {
+    background-color: #111;
+    color: #EEE;
+    line-height: 32px;
+    padding: 0;
+}
+div.footer a {
+    color: #EEE;
+}

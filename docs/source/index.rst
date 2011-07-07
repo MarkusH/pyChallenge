@@ -1,20 +1,17 @@
-.. pyChallenge documentation master file, created by
-   sphinx-quickstart on Thu May 19 14:42:11 2011.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
 Welcome to pyChallenge's documentation!
 =======================================
 
+Welcome to the documentation of pyChallenge. pyChallenge is a
+project by four students at the `Corporate States University
+Baden-Wuerttemberg, Mannheim <http://www.dhbw-mannheim.de>`_.
+
 Contents:
 
-* :ref:`database`
-
 .. toctree::
-    :maxdepth: 2
+   :maxdepth: 2
 
-    database
-    pychallenge
+   database
+   pychallenge
 
 
 Subpackages
@@ -22,8 +19,8 @@ Subpackages
 
 .. toctree::
 
-    pychallenge.utils
-    pychallenge.algorithms
+   pychallenge.utils
+   pychallenge.algorithms
 
 
 Indices and tables
@@ -32,4 +29,9 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
+.. toctree::
+   :hidden:
+
+   copyright
 
