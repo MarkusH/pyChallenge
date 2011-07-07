@@ -6,6 +6,7 @@ from pychallenge.algorithms import elo
 from pychallenge.models import Match1on1, Player, Rank_Elo, Rank_Glicko, Config
 from pychallenge.ui import utils
 import csv
+import os
 
 supported_games = ['chess']
 supported_algorithms = {
@@ -274,6 +275,13 @@ def import_comp(args):
     :param args: A list with arguments from the argument parser
     :type args: namespace
     """
+    ifile_check = args.ifile if args.ifile[0] is "/" else "%s/%s" % (os.getcwd(), args.ifile)
+    ofile_check = args.ofile if args.ofile[0] is "/" else "%s/%s" % (os.getcwd(), args.ofile)
+
+    if (ifile_check == ofile_check):
+        print "You tried to overwrite your input with your output file.\nAborted."
+        return
+
     try:
         print "Open %s and write into %s..." % (args.ifile, args.ofile)
         print "\tThis may take some time depending of the size of the input file."
