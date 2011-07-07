@@ -29,3 +29,11 @@ class Rank_Elo(models.Model):
     player_id = models.FK('Player')
     game_id = models.FK('Game')
     value = models.Numeric(value=1500)
+
+class Rank_Glicko(models.Model):
+    id = models.PK()
+    player_id = models.FK('Player')
+    game_id = models.FK('Game')
+    rd = models.Numeric(value=350)
+    rating = models.Numeric(value=1500)
+    last_match = models.Numeric()

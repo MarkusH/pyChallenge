@@ -274,6 +274,42 @@ def compare(args):
     else:
         print "Both players have the same elo rank (%d)" % value1
 
+def best(args):
+    def best_elo():
+        ranks = Rank_Elo.query().all()
+        ranks.sort()
+        ranks = sorted(ranks, key=lambda x: x.getdata("value"), reverse=True)
+        print "Rank\tRating\tNick\tFirst\tName"
+        for i in range(args.amount):
+            player = Player().query().get(player_id=ranks[i].getdata("player_id"))
+            print "%d\t%d\t%s\t%s,\t%s" % (i+1, ranks[i].getdata("value"), player.getdata("nickname"), player.getdata("firstname"), player.getdata("lastname"))
+
+  
+    best_funcs = {
+        'elo' : best_elo
+    }
+
+    print "The Top %d players in %s with %s:" % (args.amount, args.game, args.algorithm)
+    best_funcs[args.algorithm]()
+
+def worst(args):
+    def worst_elo():
+        ranks = Rank_Elo.query().all()
+        ranks.sort()
+        ranks = sorted(ranks, key=lambda x: x.getdata("value"))
+        print "Rank\tRating\tNick\tFirst\tName"
+        for i in range(args.amount):
+            player = Player().query().get(player_id=ranks[i].getdata("player_id"))
+            print "%d\t%d\t%s\t%s,\t%s" % (i+1, ranks[i].getdata("value"), player.getdata("nickname"), player.getdata("firstname"), player.getdata("lastname"))
+
+  
+    worst_funcs = {
+        'elo' : worst_elo
+    }
+
+    print "The Worst %d players in %s with %s:" % (args.amount, args.game, args.algorithm)
+    worst_funcs[args.algorithm]()
+
 def parse():
     parser = argparse.ArgumentParser(prog='pyChallenge')
     parser.add_argument('-g', '--game', help='The game for the following command. The default value is chess.')
@@ -294,8 +330,8 @@ def parse():
  
     # add result
     p_add_result = subparsers.add_parser('add-result', help='Add a result to the table specified by the --game option')
-    p_add_result.add_argument('player1', type=int, help='Nickname of player 1')
-    p_add_result.add_argument('player2', type=int, help='Nickname of player 2')
+    p_add_result.add_argument('player1', help='Nickname of player 1')
+    p_add_result.add_argument('player2', help='Nickname of player 2')
     p_add_result.add_argument('outcome', type=float, help='Outcome of the game: 0 = player 1 lost; 0.5 = draw; 1 = player 1 won')
     p_add_result.add_argument('date', type=int, help='The date of the game')
     p_add_result.set_defaults(func=add_result)
@@ -313,6 +349,16 @@ def parse():
     p_value = subparsers.add_parser('rating', help='Query the rating of the given player in the specified game using the selected algorithm')
     p_value.add_argument('player', type=int, help='Nickname of the player')
     p_value.set_defaults(func=rating)
+
+    # best
+    p_value = subparsers.add_parser('best', help='Query the best player(s) in the given game and algorithm')
+    p_value.add_argument('amount', type=int, default=1, help='The number of player to query. 10 for Top 10')
+    p_value.set_defaults(func=best)
+
+    # worst
+    p_value = subparsers.add_parser('worst', help='Query the worst player in the given game and algorithm')
+    p_value.add_argument('amount', type=int, default=1, help='The number of player to query. 10 for Worst 10')
+    p_value.set_defaults(func=worst)
 
     # import comparison file
     p_import_comp = subparsers.add_parser('import-comparison', help='Query the comparison of several players from a csv file')
