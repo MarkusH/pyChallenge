@@ -139,10 +139,9 @@ def import_results(args):
 def update(args):
     def update_elo():
         sys.stdout.write("Query matches...")
-        matches = Match1on1.query().all(date__ge=1, date__le=1)
+        matches = Match1on1.query().all() #date__ge=1, date__le=1
         sys.stdout.write("\rBeginning to update %d matches" % len(matches))
         print ""
-
 
         func = eval(Config.query().get(key="elo.chess.function").getdata("value"))
         if func is None:
