@@ -14,7 +14,7 @@ class Model(object):
     database.
 
     This is an example providing all features::
-        
+
         >>> from pychallenge.utils import models
         >>> class Player(models.Model):
         ...      player_id = models.PK()
@@ -29,16 +29,16 @@ class Model(object):
         >>> player2.save()
         >>> Player.query().all()
         [<player pk=1>, <player pk=2>]
-        >>> player1.getdata('birthday')
+        >>> player1.birthday
         '03/27/1988'
-        >>> player2.getdata('games')
+        >>> player2.games
         25
-        >>> player2.getdata('not-available')
+        >>> player2.not_available
         Traceback (most recent call last):
         AttributeError: The field not-available does not exists in model player
-        >>> player1.setdata('games', 11)
+        >>> player1.games = 11
         >>> player1.save()
-        >>> player1.getdata('games')
+        >>> player1.games
         11
         >>> player1.delete()
         >>> Player.query().all()
@@ -46,7 +46,7 @@ class Model(object):
         >>> for i in range(5):
         ...     p=Player(name="player%d"%i)
         ...     p.save(commit=False)
-        ... 
+        ...
         >>> Player.commit()
         >>> Player.query().all()
         [<player pk=2>, <player pk=3>, <player pk=4>, <player pk=5>, <player pk=6>, <player pk=7>]
@@ -78,44 +78,9 @@ class Model(object):
                 if kwargs.get(fname, None) != None:
                     new_field.value = kwargs.get(fname, None)
                 self._set_meta_field(fname, instance=new_field)
+                self.__dict__[fname] = new_field
                 if isinstance(new_field, PK):
                     self.__meta__['pk'] = fname
-
-    def getfield(self, fieldname):
-        """
-        Use :py:func:`getfield` to access a specific field of a model. To get
-        the field value, use :py:func:`getdata`. If the field does not exist,
-        a `AttributeError` is raised.
-
-        :param fieldname: The name of the field
-        :type fieldname: Basestring
-        :return: the given field
-        :rtype: :py:class:`pychallenge.utils.fields.Field`
-        """
-        return self._get_meta_field(fieldname)
-
-    def getdata(self, fieldname):
-        """
-        :py:func:`getdata` takes the name of an field and returns the content
-        of the :py:attr:`pychallenge.utils.fields.Field.value`
-
-        :param fieldname: The name of the field
-        :type fieldname: Basestring
-        :return: the requested value
-        :rtype: the type of the requested value
-        """
-        return self.getfield(fieldname).value
-
-    def setdata(self, fieldname, value):
-        """
-        Use this function to change the value of the field at a later date.
-
-        :param fieldname: The name of the field
-        :type fieldname: Basestring
-        :param value: set the value of the requested field to this value.
-        :type value: the type of the field
-        """
-        self._set_meta_field(fieldname, value=value)
 
     @property
     def pk(self):
