@@ -181,14 +181,14 @@ def update(args):
     update_funcs[args.algorithm]();
 
 def match(args):
-    def match_elo(player):
+    def match_elo(rating):
         ratings = Rank_Elo.query().all()
         best = None
         deviation = 99999999
         for r in ratings:
-            if (best is None or abs(r.getdata("value") - player.getdata("value")) < deviation) and r.getdata("player_id") != args.player:
+            if (best is None or abs(r.getdata("value") - rating.getdata("value")) < deviation) and r.getdata("player_id") != rating.getdata("player_id"):
                 best = r
-                deviation = abs(r.getdata("value") - player.getdata("value"))
+                deviation = abs(r.getdata("value") - rating.getdata("value"))
         return best
 
     """
@@ -202,21 +202,22 @@ def match(args):
         'elo' : match_elo
     }
 
-    player = utils.get_rating(args)
-    if player is None:
-        print "Player with id %s is not known." % args.player
+    rating = utils.get_rating(args)
+    if rating is None:
+        print "Player %s is not known." % args.player
         return
 
-    print "Looking for the best opponent for player %d..." % args.player
+    print "Looking for the best opponent for player %s..." % args.player 
 
-    opponent = match_funcs[args.algorithm](player);
+    opponent = match_funcs[args.algorithm](rating);
 
     if opponent is None:
         print "No opponent found."
         return
 
-    print "Best opponent for player %d with rating %d is:" % (args.player, player.getdata("value"))
-    print "\tPlayer %d with rating %d." % (opponent.getdata("player_id"), opponent.getdata("value"))
+    print "Best opponent for player %s with rating %d is:" % (args.player, rating.getdata("value"))
+    other = Player.query().get(player_id=opponent.getdata("player_id"))
+    print "\tPlayer %s with rating %d." % (other.getdata("nickname"), opponent.getdata("value"))
 
 def rating(args):
     """

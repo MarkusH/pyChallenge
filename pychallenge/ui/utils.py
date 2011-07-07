@@ -3,6 +3,8 @@ from pychallenge.models import Match1on1, Player, Rank_Elo, Config
 
 def get_rating(args):
     def rating_elo(player):
+        if player is None:
+            return None
         return Rank_Elo.query().get(player_id=player.getdata("player_id"))
     def rating_glicko():
         return None
@@ -33,12 +35,7 @@ def get_rating(args):
         return rating_funcs[args.algorithm](player)
     elif args.__dict__.get("player1", None) and args.__dict__.get("player2", None):
         player1 = Player.query().get(nickname=args.player1)
-        if player1 is None:
-            return None
-
         player2 = Player.query().get(nickname=args.player2)
-        if player2 is None:
-            return None
         return (rating_funcs[args.algorithm](player1), rating_funcs[args.algorithm](player2))
 
     return rating_funcs[args.algorithm]()
