@@ -10,3 +10,5 @@ Authors:
 * Markus Döllinger
 * Markus Holtermann
 * Robert Waury
+
+Visit our git repository at `Github <https://github.com/Markush2010/pyChallenge>`_.
