@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import copy
 from pychallenge.utils.db import db, connection, Query
 from pychallenge.utils.fields import Field, Numeric, Text, PK, FK, Date

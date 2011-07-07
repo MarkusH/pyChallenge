@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from os.path import dirname, join
 
 BASE_PATH = dirname(__file__)

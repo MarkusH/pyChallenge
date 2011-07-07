@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 computes Glicko rating a player
 Glicko requires a list of information from all played matches

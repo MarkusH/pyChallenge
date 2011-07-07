@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import sys
 from pychallenge.models import Match1on1, Player, Rank_Elo, Rank_Glicko, Config
 

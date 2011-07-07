@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from pychallenge.utils import models
 
 class Config(models.Model):

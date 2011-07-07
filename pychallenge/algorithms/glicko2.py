@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 computes Glicko-2 rating of a player
 
