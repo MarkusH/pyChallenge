@@ -11,6 +11,12 @@ supported_algorithms = {
     'chess' : ['elo', 'glicko', 'glicko2']
 }
 
+outcomes = {
+    0.0: "Player 1 lost",
+    1.0: "Player 1 won",
+    0.5: "Draw"
+}
+
 def prepare_args(args):
     """
     Prepares the arguments and checks if they  are valid. If not, prints an
@@ -47,16 +53,10 @@ def add_result(args):
     :type args: namespace
     """
 
-    outcome = {
-        0.0: "Player 1 won",
-        1.0: "Player 2 won",
-        0.5: "Draw"
-    }
-
     print "Adding a result for %s" % args.game
     print "\tPlayer 1:", args.player1
     print "\tPlayer 2:", args.player2
-    print "\tOutcome: ", outcome[args.outcome]
+    print "\tOutcome: ", outcomes[args.outcome]
     print "\tDate: ", args.date
 
     player1 = utils.add_player(args.player1, commit=False)
@@ -66,7 +66,7 @@ def add_result(args):
     pid2 = player2.getdata('player_id')
 
     dbRow = Match1on1(player1=pid1, player2=pid2, outcome=args.outcome, date=args.date)
-    dbRow.save(commit=False)
+    dbRow.save(commit=True)
 
     print "Player id for %s is %s" % (args.player1, pid1)
     print "Player id for %s is %s" % (args.player2, pid2)
@@ -107,12 +107,6 @@ def import_results(args):
     :param args: A list with arguments from the argument parser
     :type args: namespace
     """
-
-    outcome = {
-        0.0: "Player 1 won",
-        1.0: "Player 2 won",
-        0.5: "Draw"
-    }
 
     print "Importing results from", args.file
 
@@ -257,10 +251,10 @@ def compare(args):
         return
 
     if (ratings[0] == None):
-        print "Player with ID %s not known." % args.player1
+        print "Player with nickname %s not known." % args.player1
         return
     if (ratings[1] == None):
-        print "Player with ID %s not known." % args.player2
+        print "Player with nickname %s not known." % args.player2
         return
 
     value1 = ratings[0].getdata('value')
@@ -294,8 +288,8 @@ def parse():
  
     # add result
     p_add_result = subparsers.add_parser('add-result', help='Add a result to the table specified by the --game option')
-    p_add_result.add_argument('player1', type=int, help='ID of player 1')
-    p_add_result.add_argument('player2', type=int, help='ID of player 2')
+    p_add_result.add_argument('player1', type=int, help='Nickname of player 1')
+    p_add_result.add_argument('player2', type=int, help='Nickname of player 2')
     p_add_result.add_argument('outcome', type=float, help='Outcome of the game: 0 = player 1 lost; 0.5 = draw; 1 = player 1 won')
     p_add_result.add_argument('date', type=int, help='The date of the game')
     p_add_result.set_defaults(func=add_result)
@@ -306,12 +300,12 @@ def parse():
 
     # match
     p_match = subparsers.add_parser('match', help='Find the best opponent for the given player in the specified game with the selected algorithm')
-    p_match.add_argument('player', type=int, help='ID of the player')
+    p_match.add_argument('player', type=int, help='Nickname of the player')
     p_match.set_defaults(func=match)
     
     # get value
     p_value = subparsers.add_parser('rating', help='Query the rating of the given player in the specified game using the selected algorithm')
-    p_value.add_argument('player', type=int, help='ID of the player')
+    p_value.add_argument('player', type=int, help='Nickname of the player')
     p_value.set_defaults(func=rating)
 
     # import comparison file
@@ -321,8 +315,8 @@ def parse():
 
     # compare two players
     p_compare = subparsers.add_parser('compare', help='Compare two players')
-    p_compare.add_argument('player1', type=int, help='ID of player 1')
-    p_compare.add_argument('player2', type=int, help='ID of player 2')
+    p_compare.add_argument('player1', type=int, help='Nickname of player 1')
+    p_compare.add_argument('player2', type=int, help='Nickname of player 2')
     p_compare.set_defaults(func=compare)
 
     args = parser.parse_args()
