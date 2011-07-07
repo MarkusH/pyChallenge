@@ -10,5 +10,5 @@ glicko2.chess.tau,0.5
 elo.chess.function,(lambda x:(1/(1+(10**(x/400.0)))))
 elo.STT.function,(lambda x:(1/(1+(10**(x/200.0)))))
 elo.chess.k.fide.default,25
-elo.chessk.fide.strong,10
+elo.chess.k.fide.strong,10
 elo.chess.k.fide.medium,15
