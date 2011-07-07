@@ -49,12 +49,14 @@ def add_player(nickname, firstname="", lastname="", commit=False):
     already exsits, this function does nothing.
     :param nickname: The nickname of the player to add
     :type player: int
-    :return: The player model
+    :return: Tupel (the player model, boolean (False, if player already existed))
     """
     player = Player.query().get(nickname=nickname)
+    created = False
     if player == None:
+        created = True
         player = Player(firstname=firstname, lastname=lastname, nickname=nickname)
         player.save(commit)
         rank = Rank_Elo(player_id=player.getdata('player_id'))
         rank.save(commit)
-    return player
+    return player, created
