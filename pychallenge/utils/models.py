@@ -428,7 +428,7 @@ class Model(object):
 
     def __repr__(self):
         """
-        :return: Returns a readable and unambigious representation of a modal\
+        :return: Returns a readable and unambiguous representation of a modal\
         instance
         """
         if self.pk:
