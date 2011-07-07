@@ -65,4 +65,12 @@ if __name__ == "__main__":
             `key` TEXT,
             `value` TEXT
         );
+        CREATE TABLE `rank_glicko` (
+            `id` INTEGER PRIMARY KEY,
+            `player_id` NUMERIC,
+            `game_id` NUMERIC,
+            `rd` NUMERIC,
+            `rating` NUMERIC,
+            `last_match` NUMERIC
+        );
         """)
