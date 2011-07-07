@@ -388,62 +388,45 @@ def create_player(args):
     else:
         print "The player with nickname %s already exists." % args.nickname
 
-def best(args):
-    def best_elo():
+def best_worst(args, best):
+    def best_worst_elo():
         ranks = Rank_Elo.query().all()
-        ranks.sort()
-        ranks = sorted(ranks, key=lambda x: x.value.value, reverse=True)
+        ranks = sorted(ranks, key=lambda x: x.value.value, reverse=best)
         print "Rank\tRating\tNick\tFirst\tName"
         for i in range(min(args.amount, len(ranks))):
             player = Player().query().get(player_id=ranks[i].player_id.value)
             print "%d\t%d\t%s\t%s,\t%s" % (i+1, ranks[i].value.value, player.nickname.value, player.firstname.value, player.lastname.value)
+    """
+    Queries the n best or worst players of a given pair of game and algorithm.
+    """
 
-
-    best_funcs = {
-        'elo' : best_elo
+    best_worst_funcs = {
+        'elo' : best_worst_elo
     }
 
-    print "The Top %d players in %s with %s:" % (args.amount, args.game, args.algorithm)
-    best_funcs[args.algorithm]()
-
-def worst(args):
-    def worst_elo():
-        ranks = Rank_Elo.query().all()
-        ranks.sort()
-        ranks = sorted(ranks, key=lambda x: x.value.value)
-        print "Rank\tRating\tNick\tFirst\tName"
-        for i in range(min(args.amount, len(ranks))):
-            player = Player().query().get(player_id=ranks[i].player_id.value)
-            print "%d\t%d\t%s\t%s,\t%s" % (i+1, ranks[i].value.value, player.nickname.value, player.firstname.value, player.lastname.value)
-
-
-    worst_funcs = {
-        'elo' : worst_elo
-    }
-
-    print "The Worst %d players in %s with %s:" % (args.amount, args.game, args.algorithm)
-    worst_funcs[args.algorithm]()
+    print "The %s %d players in %s with %s:" % (("Top" if best else "Worst"), args.amount, args.game, args.algorithm)
+    best_worst_funcs[args.algorithm]()
 
 def parse():
     parser = argparse.ArgumentParser(prog='pyChallenge')
-    parser.add_argument('-g', '--game', help='The game for the following command. The default value is chess.')
-    parser.add_argument('-a', '--algorithm', help='The algorithm for the following command. The default value is ELO')
+    parser.add_argument('-g', '--game', help='The game for the following command. The default value is "chess".')
+    parser.add_argument('-a', '--algorithm', help='The algorithm for the following command. The default value is "elo"')
     parser.add_argument('-v', '--version', action='version',
-        version="%s version: %s" % ("%(prog)s", pychallenge.get_version()), help='Prints out the version information of pyChallenge')
+        version="%s version: %s" % ("%(prog)s", pychallenge.get_version()), help='Print out the version of pyChallenge and exit')
     subparsers = parser.add_subparsers(help='sub-command help')
 
     # import config
-    p_config = subparsers.add_parser('import-config', help='Update the config with a given config file')
-    p_config.add_argument('file', help='The config to import')
+    p_config = subparsers.add_parser('import-config', help='Update the config table with a given config file in csv format.')
+    p_config.add_argument('file', help='The (csv) config file to import')
     p_config.set_defaults(func=import_config)
 
     # import results
-    p_import = subparsers.add_parser('import-results', help='Import data to the result table from a csv file')
+    p_import = subparsers.add_parser('import-results', help='Import data to the result table from a csv file. This only adds the matches but does not compute any ratings.')
     p_import.add_argument('file', help='The file to import')
     p_import.set_defaults(func=import_results)
 
     # add result
-    p_add_result = subparsers.add_parser('add-result', help='Add a result to the table specified by the --game option')
+    p_add_result = subparsers.add_parser('add-result', help='Add a result to the result table. This only adds the matche but does not compute any ratings.')
     p_add_result.add_argument('player1', help='Nickname of player 1')
     p_add_result.add_argument('player2', help='Nickname of player 2')
     p_add_result.add_argument('outcome', type=float, help='Outcome of the game: 0 = player 1 lost; 0.5 = draw; 1 = player 1 won')
@@ -451,44 +434,45 @@ def parse():
     p_add_result.set_defaults(func=add_result)
 
     # update
-    p_update = subparsers.add_parser('update', help='Update the rating values for all players in the given game for the specified algorithm')
+    p_update = subparsers.add_parser('update', help='Update the rating values for all players in the given game for the specified algorithm.')
     p_update.set_defaults(func=update)
 
     # match
-    p_match = subparsers.add_parser('match', help='Find the best opponent for the given player in the specified game with the selected algorithm')
+    p_match = subparsers.add_parser('match', help='Find the best opponent for the given player in the specified game with the selected algorithm.')
     p_match.add_argument('player', help='Nickname of the player')
     p_match.set_defaults(func=match)
 
     # get value
-    p_value = subparsers.add_parser('rating', help='Query the rating of the given player in the specified game using the selected algorithm')
+    p_value = subparsers.add_parser('rating', help='Query the rating of the given player in the specified game using the selected algorithm.')
     p_value.add_argument('player', help='Nickname of the player')
     p_value.set_defaults(func=rating)
 
     # best
-    p_best = subparsers.add_parser('best', help='Query the best player(s) in the given game and algorithm')
-    p_best.add_argument('amount', type=int, default=1, help='The number of player to query. 10 for Top 10')
-    p_best.set_defaults(func=best)
+    p_best = subparsers.add_parser('best', help='Query the best player(s) in the given game and algorithm.')
+    p_best.add_argument('amount', type=int, default=1, help='The number of players to query. "10" for Top 10')
+    p_best.set_defaults(func=lambda x: best_worst(x, True))
 
     # worst
-    p_worst = subparsers.add_parser('worst', help='Query the worst player(s) in the given game and algorithm')
-    p_worst.add_argument('amount', type=int, default=1, help='The number of player to query. 10 for Worst 10')
-    p_worst.set_defaults(func=worst)
+    p_worst = subparsers.add_parser('worst', help='Query the worst player(s) in the given game and algorithm.')
+    p_worst.add_argument('amount', type=int, default=1, help='The number of player to query. "10" for Worst 10')
+    p_worst.set_defaults(func=lambda x: best_worst(x, False))
 
     # predict
-    p_predict = subparsers.add_parser('predict', help='Predict the matches in csv file and write the results to another csv file')
+    p_predict = subparsers.add_parser('predict', help='Predict the matches listed in a csv file and write the predicted results to another csv file.')
     p_predict.add_argument('ifile', help='The file to import')
     p_predict.add_argument('ofile', help='The output file')
-    p_predict.add_argument('-i', '--incremental', action="store_true", help='If true, updates the rating after each match on-the-fly')
+    p_predict.add_argument('-i', '--incremental', action="store_true", help='If specified, updates the ratings after each match on-the-fly.' +
+        'This does not set any values in the database. If not specified, uses the current ratings for each listed game.')
     p_predict.set_defaults(func=predict)
 
     # compare two players
-    p_compare = subparsers.add_parser('compare', help='Compare two players')
+    p_compare = subparsers.add_parser('compare', help='Compare two players in the specified game with the given algorithm and predict who will win.')
     p_compare.add_argument('player1', help='Nickname of player 1')
     p_compare.add_argument('player2', help='Nickname of player 2')
     p_compare.set_defaults(func=compare)
 
     # create new player
-    p_create_player = subparsers.add_parser('create-player', help='Creates a new player in the database.')
+    p_create_player = subparsers.add_parser('create-player', help='Creates a new player in the database and initializes his rating with the default values.')
     p_create_player.add_argument('nickname', help='Nickname for the new player')
     p_create_player.add_argument('firstname', type=unicode, help='First name of the new player')
     p_create_player.add_argument('lastname', type=unicode, help='Last name of the new player')
