@@ -40,7 +40,7 @@ utils Package
     :show-inheritance:
     :private-members:
     :special-members:
-    :exclude-members: __dict__, __module__, __weakref__, id
+    :exclude-members: __dict__, __module__, __weakref__, id, __query__
 
 
 :mod:`settings` Module
