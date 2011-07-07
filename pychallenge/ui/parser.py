@@ -120,13 +120,23 @@ def import_results(args):
         csvfile.seek(0)
         hasHeader = csv.Sniffer().has_header(sample)
         reader = csv.reader(csvfile, delimiter=',')
-        nicknames = []
+        
+        # nickname --> player
+        players = {}
+
         for row in reader:
             if line != 0 or (line == 0 and not hasHeader):
                 if row[1] is row[2]:
                     continue
-                player1 = utils.add_player(row[1], commit=False)
-                player2 = utils.add_player(row[2], commit=False)
+
+                player1 = players.get(row[1], None)
+                player2 = players.get(row[2], None)
+                if player1 is None:
+                    player1, created = utils.add_player(row[1], commit=False)
+                    players[player1.getdata("nickname")] = player1
+                if player2 is None:
+                    player2, created = utils.add_player(row[2], commit=False)
+                    players[player2.getdata("nickname")] = player2
 
                 dbRow = Match1on1(player1=player1.getdata('player_id'), player2=player2.getdata('player_id'), outcome=row[3], date=row[0])
                 dbRow.save(commit=False)
@@ -134,8 +144,10 @@ def import_results(args):
             if line % 100 == 0:
                 sys.stdout.write("\r" + "Imported %d entries..." % line)
                 sys.stdout.flush()
-                # Match1on1.commit()
             line = line + 1
+
+        Rank_Elo.commit()
+        Rank_Glicko.commit()
         Match1on1.commit()
         print "\rImported", line - 1, "entries."
     except csv.Error, e:
@@ -144,31 +156,43 @@ def import_results(args):
 def update(args):
     def update_elo():
         sys.stdout.write("Query matches...")
-        matches = Match1on1.query().all() #date__ge=1, date__le=1
+        matches = Match1on1.query().all()
         sys.stdout.write("\rBeginning to update %d matches" % len(matches))
         print ""
 
+        # constants
         func = eval(Config.query().get(key="elo.chess.function").getdata("value"))
         if func is None:
             func = lambda x:(1/(1+(10**(x/400.0))))
         k = float(Config.query().get(key="elo.chess.k.fide.default").getdata("value"))
         if k is None:
             k = 25
+
+        # Query all ratings and store it in a dictionary. This is done to store
+        # the newest rating data in memory. We do not have to commit.
+        ratings = Rank_Elo.query().all()
+        rdict = {}
+        for r in ratings:
+            rdict[r.getdata("player_id")] = r
+
         updates = 0
         for match in matches:
-            rating1 = Rank_Elo.query().get(player_id=match.getdata('player1'))
-            rating2 = Rank_Elo.query().get(player_id=match.getdata('player2'))
+            rating1 = rdict[match.getdata('player1')]
+            rating2 = rdict[match.getdata('player2')]
             
             result = elo.elo1on1(rating1.getdata('value'), rating2.getdata('value'), match.getdata('outcome'), k, func)
             rating1.value = result[0]
             rating2.value = result[1]
-            rating1.save(commit=False)
-            rating2.save(commit=False)
-            Rank_Elo.commit()
+
             updates = updates + 1
             if updates % 50 == 0:
                 sys.stdout.write("\r" + "Updated %d matches..." % updates)
                 sys.stdout.flush()
+
+        # update table
+        for r in ratings:
+            r.save(commit=False)
+        Rank_Elo.commit()
         print "\rUpdated", updates, "matches."
     """
     Updates the ratings for all players.

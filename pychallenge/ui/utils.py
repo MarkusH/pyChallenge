@@ -48,7 +48,13 @@ def add_player(nickname, firstname="", lastname="", commit=False):
     Adds a player and the corresponding ranks to the database. If the player
     already exsits, this function does nothing.
     :param nickname: The nickname of the player to add
-    :type player: int
+    :type nickname: string
+    :param firstname: The first name of the player to add
+    :type firstname: string
+    :param lastname: The last name of the player to add
+    :type lastname: string
+    :param commit: True if the rows should be committed
+    :type commit: bool
     :return: Tupel (the player model, boolean (False, if player already existed))
     """
     player = Player.query().get(nickname=nickname)
