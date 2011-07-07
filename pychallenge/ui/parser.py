@@ -50,7 +50,7 @@ def prepare_args(args):
 def add_result(args):
     """
     Adds a result row to the result table.
-    
+
     :param args: A list with arguments from the argument parser
     :type args: namespace
     """
@@ -66,8 +66,8 @@ def add_result(args):
     player1 = utils.add_player(args.player1, commit=False)
     player2 = utils.add_player(args.player2, commit=False)
 
-    pid1 = player1.getdata('player_id')
-    pid2 = player2.getdata('player_id')
+    pid1 = player1.player_id.value
+    pid2 = player2.player_id.value
 
     dbRow = Match1on1(player1=pid1, player2=pid2, outcome=args.outcome, date=args.date)
     dbRow.save(commit=True)
@@ -79,7 +79,7 @@ def add_result(args):
 def import_config(args):
     """
     Imports the config data of a csv file into the config table.
-    
+
     :param args: A list with arguments from the argument parser
     :type args: namespace
     """
@@ -107,7 +107,7 @@ def import_config(args):
 def import_results(args):
     """
     Imports the match data of a csv file into the result table.
-    
+
     :param args: A list with arguments from the argument parser
     :type args: namespace
     """
@@ -121,7 +121,7 @@ def import_results(args):
         csvfile.seek(0)
         hasHeader = csv.Sniffer().has_header(sample)
         reader = csv.reader(csvfile, delimiter=',')
-        
+
         # nickname --> player
         players = {}
 
@@ -134,12 +134,12 @@ def import_results(args):
                 player2 = players.get(row[2], None)
                 if player1 is None:
                     player1, created = utils.add_player(row[1], commit=False)
-                    players[player1.getdata("nickname")] = player1
+                    players[player1.nickname.value] = player1
                 if player2 is None:
                     player2, created = utils.add_player(row[2], commit=False)
-                    players[player2.getdata("nickname")] = player2
+                    players[player2.nickname.value] = player2
 
-                dbRow = Match1on1(player1=player1.getdata('player_id'), player2=player2.getdata('player_id'), outcome=row[3], date=row[0])
+                dbRow = Match1on1(player1=player1.player_id.value, player2=player2.player_id.value, outcome=row[3], date=row[0])
                 dbRow.save(commit=False)
 
             if line % 100 == 0:
@@ -171,14 +171,14 @@ def update(args):
         ratings = Rank_Elo.query().all()
         rdict = {}
         for r in ratings:
-            rdict[r.getdata("player_id")] = r
+            rdict[r.player_id.value] = r
 
         updates = 0
         for match in matches:
-            rating1 = rdict[match.getdata('player1')]
-            rating2 = rdict[match.getdata('player2')]
-            
-            result = elo.elo1on1(rating1.getdata('value'), rating2.getdata('value'), match.getdata('outcome'), k, func)
+            rating1 = rdict[match.player1.value]
+            rating2 = rdict[match.player2.value]
+
+            result = elo.elo1on1(rating1.value.value, rating2.value.value, match.outcome.value, k, func)
             rating1.value = result[0]
             rating2.value = result[1]
 
@@ -194,7 +194,7 @@ def update(args):
         print "\rUpdated", updates, "matches."
     """
     Updates the ratings for all players.
-    
+
     :param args: A list with arguments from the argument parser
     :type args: namespace
     """
@@ -212,9 +212,9 @@ def match(args):
         best = None
         deviation = 99999999
         for r in ratings:
-            if (best is None or abs(r.getdata("value") - rating.getdata("value")) < deviation) and r.getdata("player_id") != rating.getdata("player_id"):
+            if (best is None or abs(r.value.value - rating.value.value) < deviation) and r.player_id.value != rating.player_id.value:
                 best = r
-                deviation = abs(r.getdata("value") - rating.getdata("value"))
+                deviation = abs(r.value.value - rating.value.value)
         return best
 
     """
@@ -223,7 +223,7 @@ def match(args):
     :param args: A list with arguments from the argument parser
     :type args: namespace
     """
-    
+
     match_funcs = {
         'elo' : match_elo
     }
@@ -241,9 +241,9 @@ def match(args):
         print "No opponent found."
         return
 
-    print "Best opponent for player %s with rating %d is:" % (args.player, rating.getdata("value"))
-    other = Player.query().get(player_id=opponent.getdata("player_id"))
-    print "\tPlayer %s with rating %d." % (other.getdata("nickname"), opponent.getdata("value"))
+    print "Best opponent for player %s with rating %d is:" % (args.player, rating.value.value)
+    other = Player.query().get(player_id=opponent.player_id.value)
+    print "\tPlayer %s with rating %d." % (other.nickname.value, opponent.value.value)
 
 def rating(args):
     """
@@ -258,8 +258,8 @@ def rating(args):
     if player is None:
         print "The rating for player %s in %s using %s is not known." % (args.player, args.game, args.algorithm)
     else:
-        print "The rating for player %s in %s using %s is %d." % (args.player, args.game, args.algorithm, player.getdata("value"))
-    
+        print "The rating for player %s in %s using %s is %d." % (args.player, args.game, args.algorithm, player.value.value)
+
 
 def predict(args):
     """
@@ -300,16 +300,16 @@ def predict(args):
         ratings = Rank_Elo.query().all()
         rdict = {}
         for r in ratings:
-            player = Player.query().get(player_id=r.getdata("player_id"))
-            rdict[player.getdata("nickname")] = r
+            player = Player.query().get(player_id=r.player_id.value)
+            rdict[player.nickname.value] = r
 
         for row in reader:
             if line != 0 or (line == 0 and not hasHeader):
                 ratings = (rdict.get(row[1], None), rdict.get(row[2], None))
                 if ratings[0] is None or ratings[1] is None:
                     continue
-                value1 = ratings[0].getdata('value')
-                value2 = ratings[1].getdata('value')
+                value1 = ratings[0].value.value
+                value2 = ratings[1].value.value
 
                 if (value1 > value2):
                     outcome = 1
@@ -363,8 +363,8 @@ def compare(args):
         print "Player with nickname %s not known." % args.player2
         return
 
-    value1 = ratings[0].getdata('value')
-    value2 = ratings[1].getdata('value')
+    value1 = ratings[0].value.value
+    value2 = ratings[1].value.value
     if value1 != value2:
         winning_player = args.player1 if value1 > value2 else args.player2
         print "\tPlayer %s will (probably) win." % winning_player
@@ -383,7 +383,7 @@ def create_player(args):
     player, created = utils.add_player(args.nickname, args.firstname, args.lastname, True)
     if created is True:
         print "The player is now known in the database:"
-        print "ID: %d;\tfirst name: %s;\tlast name: %s;\tnickname: %s" % (player.getdata('player_id'),
+        print "ID: %d;\tfirst name: %s;\tlast name: %s;\tnickname: %s" % (player.player_id.value,
             args.firstname, args.lastname, args.nickname)
     else:
         print "The player with nickname %s already exists." % args.nickname
@@ -392,13 +392,13 @@ def best(args):
     def best_elo():
         ranks = Rank_Elo.query().all()
         ranks.sort()
-        ranks = sorted(ranks, key=lambda x: x.getdata("value"), reverse=True)
+        ranks = sorted(ranks, key=lambda x: x.value.value, reverse=True)
         print "Rank\tRating\tNick\tFirst\tName"
         for i in range(min(args.amount, len(ranks))):
-            player = Player().query().get(player_id=ranks[i].getdata("player_id"))
-            print "%d\t%d\t%s\t%s,\t%s" % (i+1, ranks[i].getdata("value"), player.getdata("nickname"), player.getdata("firstname"), player.getdata("lastname"))
+            player = Player().query().get(player_id=ranks[i].player_id.value)
+            print "%d\t%d\t%s\t%s,\t%s" % (i+1, ranks[i].value.value, player.nickname.value, player.firstname.value, player.lastname.value)
 
-  
+
     best_funcs = {
         'elo' : best_elo
     }
@@ -410,13 +410,13 @@ def worst(args):
     def worst_elo():
         ranks = Rank_Elo.query().all()
         ranks.sort()
-        ranks = sorted(ranks, key=lambda x: x.getdata("value"))
+        ranks = sorted(ranks, key=lambda x: x.value.value)
         print "Rank\tRating\tNick\tFirst\tName"
         for i in range(min(args.amount, len(ranks))):
-            player = Player().query().get(player_id=ranks[i].getdata("player_id"))
-            print "%d\t%d\t%s\t%s,\t%s" % (i+1, ranks[i].getdata("value"), player.getdata("nickname"), player.getdata("firstname"), player.getdata("lastname"))
+            player = Player().query().get(player_id=ranks[i].player_id.value)
+            print "%d\t%d\t%s\t%s,\t%s" % (i+1, ranks[i].value.value, player.nickname.value, player.firstname.value, player.lastname.value)
 
-  
+
     worst_funcs = {
         'elo' : worst_elo
     }
@@ -441,7 +441,7 @@ def parse():
     p_import = subparsers.add_parser('import-results', help='Import data to the result table from a csv file')
     p_import.add_argument('file', help='The file to import')
     p_import.set_defaults(func=import_results)
- 
+
     # add result
     p_add_result = subparsers.add_parser('add-result', help='Add a result to the table specified by the --game option')
     p_add_result.add_argument('player1', help='Nickname of player 1')
@@ -458,7 +458,7 @@ def parse():
     p_match = subparsers.add_parser('match', help='Find the best opponent for the given player in the specified game with the selected algorithm')
     p_match.add_argument('player', help='Nickname of the player')
     p_match.set_defaults(func=match)
-    
+
     # get value
     p_value = subparsers.add_parser('rating', help='Query the rating of the given player in the specified game using the selected algorithm')
     p_value.add_argument('player', help='Nickname of the player')
@@ -492,7 +492,7 @@ def parse():
     p_create_player.add_argument('nickname', help='Nickname for the new player')
     p_create_player.add_argument('firstname', type=unicode, help='First name of the new player')
     p_create_player.add_argument('lastname', type=unicode, help='Last name of the new player')
-    p_create_player.set_defaults(func=create_player) 
+    p_create_player.set_defaults(func=create_player)
 
     args = parser.parse_args()
     if (not prepare_args(args)):

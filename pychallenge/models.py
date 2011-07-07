@@ -3,7 +3,7 @@ from pychallenge.utils import models
 
 class Config(models.Model):
     key = models.Text()
-    value = models.Text()        
+    value = models.Text()
 
 class Algorithm(models.Model):
     algorithm_id = models.PK()
