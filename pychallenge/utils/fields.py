@@ -119,7 +119,7 @@ class FK(Numeric):
         return const
 
 
-class Date(Field):
+class Date(Text):
     """
     This field class matches the SQLite field type "DATE"
     """

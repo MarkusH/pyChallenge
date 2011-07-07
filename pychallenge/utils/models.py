@@ -1,19 +1,68 @@
 import copy
 from pychallenge.utils.db import db, connection, Query
-from pychallenge.utils.fields import Field, Numeric, Text, PK, FK
+from pychallenge.utils.fields import Field, Numeric, Text, PK, FK, Date
 
 
 class Model(object):
     """
-    This is the general Model class. All Models inherit from this one
+    This is the general Model class. All Models inherit from this one.
+
+    To use the object-relational mapping (ORM) first a class has to inherit
+    from :py:class:`pychallenge.utils.models.Model`. Then, all class
+    variables, one adds to the class, are interpreted as columns in the
+    database.
+
+    This is an example providing all features::
+        
+        >>> from pychallenge.utils import models
+        >>> class Player(models.Model):
+        ...      player_id = models.PK()
+        ...      name = models.Text()
+        ...      birthday = models.Date()
+        ...      games = models.Numeric()
+        ...
+        >>> Player.create()
+        >>> player1 = Player(name="Michael", birthday="1988-03-27", games=10)
+        >>> player1.save(commit=False)
+        >>> player2 = Player(name="Jessica", birthday="1988-09-14", games=25)
+        >>> player2.save()
+        >>> Player.query().all()
+        [<player pk=1>, <player pk=2>]
+        >>> player1.getdata('birthday')
+        '03/27/1988'
+        >>> player2.getdata('games')
+        25
+        >>> player2.getdata('not-available')
+        Traceback (most recent call last):
+        AttributeError: The field not-available does not exists in model player
+        >>> player1.setdata('games', 11)
+        >>> player1.save()
+        >>> player1.getdata('games')
+        11
+        >>> player1.delete()
+        >>> Player.query().all()
+        [<player pk=2>]
+        >>> for i in range(5):
+        ...     p=Player(name="player%d"%i)
+        ...     p.save(commit=False)
+        ... 
+        >>> Player.commit()
+        >>> Player.query().all()
+        [<player pk=2>, <player pk=3>, <player pk=4>, <player pk=5>, <player pk=6>, <player pk=7>]
+        >>> Player.query().filter(player_id__lt=4).filter(player_id__ge=6).all()
+        >>> Player.query().filter(player_id__lt=4).filter(player_id__ge=6).join_or().all()
+        [<player pk=2>, <player pk=3>, <player pk=6>, <player pk=7>]
+        >>> Player.query().truncate()
+        >>> Player.query().drop()
     """
     __query__ = None
 
     def __init__(self, **kwargs):
         """
         This initializes a new model object.
-        :param kwargs: a dictionary with the model fields as index and
-        their value
+
+        :param kwargs: a dictionary with the model fields as index and their
+            value
         :type kwargs: dictionary
         """
         self.__meta__ = {}
@@ -32,13 +81,40 @@ class Model(object):
                     self.__meta__['pk'] = fname
 
     def getfield(self, fieldname):
+        """
+        Use :py:func:`getfield` to access a specific field of a model. To get
+        the field value, use :py:func:`getdata`. If the field does not exist,
+        a `AttributeError` is raised.
+
+        :param fieldname: The name of the field
+        :type fieldname: Basestring
+        :return: the given field
+        :rtype: :py:class:`pychallenge.utils.fields.Field`
+        """
         return self._get_meta_field(fieldname)
 
     def getdata(self, fieldname):
+        """
+        :py:func:`getdata` takes the name of an field and returns the content
+        of the :py:attr:`pychallenge.utils.fields.Field.value`
+
+        :param fieldname: The name of the field
+        :type fieldname: Basestring
+        :return: the requested value
+        :rtype: the type of the requested value
+        """
         return self.getfield(fieldname).value
 
-    def setdata(self, fieldname, value=None):
-        return self._set_meta_field(fieldname, value=value)
+    def setdata(self, fieldname, value):
+        """
+        Use this function to change the value of the field at a later date.
+
+        :param fieldname: The name of the field
+        :type fieldname: Basestring
+        :param value: set the value of the requested field to this value.
+        :type value: the type of the field
+        """
+        self._set_meta_field(fieldname, value=value)
 
     @property
     def pk(self):
@@ -50,6 +126,13 @@ class Model(object):
     @classmethod
     def all(cls, **kwargs):
         """
+        This function returns all objects that match all performed
+        (:py:func:`filter`) queries. If there are no results,
+        :py:func:`all` returns an empty list.
+
+        :param kwargs: Any type of filter query (see :py:func:`filter`)
+        :return: A list of instances or an empty list if there are no matching
+        :rtype: list
         """
         cls.__query__ = cls.__query__.filter(**kwargs)
         fields = [f for f, t in cls.__dict__.items() if isinstance(t, Field)]
@@ -68,10 +151,18 @@ class Model(object):
                     i += 1
                 instance = cls(**tmp)
                 result.append(copy.copy(instance))
-            return result if len(result) > 0 else None
+            return result if len(result) > 0 else []
+        return []
 
     @classmethod
     def create(cls, dry_run=False):
+        """
+        This method creates the table in the database.
+
+        :param dry_run: `True` or `False`. If dry_run is `True`, the
+            database query is not executed.
+        :type dry_run: boolean
+        """
         fields = {}
         for f, t in cls.__dict__.items():
             if isinstance(t, Field):
@@ -82,19 +173,25 @@ class Model(object):
             'dry_run': dry_run,
         }
         cls.__query__ = Query(Query.QTYPE_CREATE, fields, **kwargs)
-        statement = cls.__query__.run()
-        if statement:
-            db.execute(statement)
+        ret = cls.__query__.run()
+        if ret:
+            statement, values = ret
+            db.execute(statement, values)
 
     @classmethod
     def commit(self):
+        """
+        This function forces a commit of all data within the current
+        connection
+        """
         connection.commit()
 
     def save(self, commit=True):
         """
         Calling the save methode will store the object in the databse.
 
-        :param commit: If true, each change will direct affect the database
+        :param commit: If `True` (default), each change will direct affect the
+            database. If `commit` is `False` 
         :type commit: Boolean
         """
         if self.pk and self.__meta__['fields'][self.pk].value:
@@ -124,7 +221,7 @@ class Model(object):
     def delete(self, commit=True):
         """
         Calling this method will remove the object from the database. However,
-        any variable instances refering this object can still access it.
+        any variable that is referring an instance still access it.
 
         :param commit: If true, each change will direct affect the database
         :type commit: Boolean
@@ -142,6 +239,10 @@ class Model(object):
 
     @classmethod
     def drop(cls):
+        """
+        This method drops this table from the database.
+        """
+        # TODO: dry_run
         __query__ = Query(Query.QTYPE_DROP, {}, table=cls.__name__.lower())
         ret = __query__.run()
         if ret:
@@ -151,6 +252,10 @@ class Model(object):
 
     @classmethod
     def truncate(cls):
+        """
+        This method removes all records in this table from the database.
+        """
+        # TODO: dry_run
         __query__ = Query(Query.QTYPE_TRUNCATE, {}, table=cls.__name__.lower())
         ret = __query__.run()
         if ret:
@@ -161,9 +266,9 @@ class Model(object):
     @classmethod
     def get(cls, **kwargs):
         """
-        :return: returns a sigle instances of the model or None if there is\
-                no object matching the pattern If more that one object matches\
-                the pattern an exception is raised
+        :return: returns a sigle instances of the model or None if there is
+            no object matching the pattern.
+        :rtype: an instance of the current class
         """
         cls.__query__ = cls.__query__.filter(**kwargs).limit(1)
         fields = [f for f, t in cls.__dict__.items() if isinstance(t, Field)]
@@ -187,7 +292,13 @@ class Model(object):
     @classmethod
     def query(cls, dry_run=False):
         """
-        :return: list of instances matching the given attributes
+        This function initializes and constructs the prepared database query
+        statement and is used to run functions like :py:func:`all`,
+        :py:func:`save`, :py:func:`delete`, :py:func:`create`
+
+        :param dry_run: `True` or `False`. If dry_run is `True`, the
+            database query is not executed.
+        :type dry_run: boolean
         """
         fields = {}
         for f, t in cls.__dict__.items():
@@ -203,26 +314,66 @@ class Model(object):
 
     @classmethod
     def filter(cls, **kwargs):
+        """
+        Filter the fields of any select statement to the given fields. See
+        :py:func:`pychallenge.utils.db.Query.filter` for a description of
+        kwargs and return the prepared / filtered query.
+
+        If no :py:func:`join_or` is invoked, all filter statements are
+        connected by `AND`.
+
+        *Confer*: :py:func:`filter_or`, :py:func:`join_and`,
+        :py:func:`join_or`, :py:func:`pychallenge.utils.db.Query.filter`
+        """
         cls.__query__ = cls.__query__.filter(**kwargs)
         return cls
 
     @classmethod
     def filter_or(cls, **kwargs):
+        """
+        This function does the same :py:func:`filter`, but connects the
+        statements by `OR`.
+
+        *Confer*: :py:func:`filter`, :py:func:`join_and`,
+        :py:func:`join_or`, :py:func:`pychallenge.utils.db.Query.filter`
+        """
         cls.__query__ = cls.__query__.filter_or(**kwargs)
         return cls
 
     @classmethod
     def join_and(cls):
+        """
+        This forces a connection of the given filter statements by `AND`.
+
+        *Confer*: :py:func:`filter`, :py:func:`filter_or`,
+        :py:func:`join_or`, :py:func:`pychallenge.utils.db.Query.filter`
+        """
         cls.__query__ = cls.__query__.join_and()
         return cls
 
     @classmethod
     def join_or(cls):
+        """
+        This forces a connection of the given filter statements by `OR`.
+
+        *Confer*: :py:func:`filter`, :py:func:`filter_or`,
+        :py:func:`join_and`, :py:func:`pychallenge.utils.db.Query.filter`
+        """
         cls.__query__ = cls.__query__.join_or()
         return cls
 
     @classmethod
     def limit(cls, count, offset=None):
+        """
+        The limit functions returns only the first (by database) `count`
+        rows of the the database.
+
+        :param count: Limit to this number of returned objects.
+        :type count: Integer
+        :param offset: Setting offset to an positiv Integer ommits the first
+            `offset` objects.
+        :type offset: positiv Integer
+        """
         cls.__query__ = cls.__query__.limit(count, offset)
         return cls
 
@@ -277,8 +428,8 @@ class Model(object):
 
     def __repr__(self):
         """
-        :return: Returns a readable and unambigious representation of a modal\
-                instance
+        :return: Returns a readable and unambiguous representation of a modal\
+        instance
         """
         if self.pk:
             return "<%s pk=%s>" % (self.__meta__['name'],
