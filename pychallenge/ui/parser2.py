@@ -342,12 +342,12 @@ def parse():
 
     # match
     p_match = subparsers.add_parser('match', help='Find the best opponent for the given player in the specified game with the selected algorithm')
-    p_match.add_argument('player', type=int, help='Nickname of the player')
+    p_match.add_argument('player', help='Nickname of the player')
     p_match.set_defaults(func=match)
     
     # get value
     p_value = subparsers.add_parser('rating', help='Query the rating of the given player in the specified game using the selected algorithm')
-    p_value.add_argument('player', type=int, help='Nickname of the player')
+    p_value.add_argument('player', help='Nickname of the player')
     p_value.set_defaults(func=rating)
 
     # best
@@ -367,8 +367,8 @@ def parse():
 
     # compare two players
     p_compare = subparsers.add_parser('compare', help='Compare two players')
-    p_compare.add_argument('player1', type=int, help='Nickname of player 1')
-    p_compare.add_argument('player2', type=int, help='Nickname of player 2')
+    p_compare.add_argument('player1', help='Nickname of player 1')
+    p_compare.add_argument('player2', help='Nickname of player 2')
     p_compare.set_defaults(func=compare)
 
     args = parser.parse_args()
