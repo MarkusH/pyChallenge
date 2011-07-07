@@ -143,12 +143,18 @@ def update(args):
         sys.stdout.write("\rBeginning to update %d matches" % len(matches))
         print ""
 
+
+        func = eval(Config.query().get(key="elo.chess.function").getdata("value"))
+        if func is None:
+            func = lambda x:(1/(1+(10**(x/400.0))))
         k = float(Config.query().get(key="elo.chess.k.fide.default").getdata("value"))
+        if k is None:
+            k = 25
         updates = 0
         for match in matches:
             rating1 = Rank_Elo.query().get(player_id=match.getdata('player1'))
             rating2 = Rank_Elo.query().get(player_id=match.getdata('player2'))
-            func = lambda x:(1/(1+(10**(x/400.0))))
+            
             result = elo.elo1on1(rating1.getdata('value'), rating2.getdata('value'), match.getdata('outcome'), k, func)
             rating1.value = result[0]
             rating2.value = result[1]
