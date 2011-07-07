@@ -274,6 +274,20 @@ def compare(args):
     else:
         print "Both players have the same elo rank (%d)" % value1
 
+def create_player(args):
+    """
+    Creates a new player (as specified in args)
+    :param args: A list with arguments from the argument parser
+    :type args: namespace
+    """
+    player, created  = utils.add_player(args.nickname, args.firstname, args.lastname, True)
+    if created is True:
+        print "The player is now known in the database:"
+        print "ID: %d;\tfirst name: %s;\tlast name: %s;\tnickname: %d" % (player.getdata('player_id'),
+            args.firstname, args.lastname, args.nickname)
+    else:
+        print "The player with nickname %d already exists." % args.nickname
+
 def parse():
     parser = argparse.ArgumentParser(prog='pyChallenge')
     parser.add_argument('-g', '--game', help='The game for the following command. The default value is chess.')
@@ -324,6 +338,13 @@ def parse():
     p_compare.add_argument('player1', type=int, help='Nickname of player 1')
     p_compare.add_argument('player2', type=int, help='Nickname of player 2')
     p_compare.set_defaults(func=compare)
+
+    # create new player
+    p_create_player = subparsers.add_parser('create-player', help='Creates a new player in the database.')
+    p_create_player.add_argument('nickname', type=int, help='Nickname for the new player')
+    p_create_player.add_argument('firstname', type=unicode, help='First name of the new player')
+    p_create_player.add_argument('lastname', type=unicode, help='Last name of the new player')
+    p_create_player.set_defaults(func=create_player) 
 
     args = parser.parse_args()
     if (not prepare_args(args)):
