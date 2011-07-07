@@ -376,7 +376,7 @@ def parse():
     # worst
     p_worst = subparsers.add_parser('worst', help='Query the worst player(s) in the given game and algorithm')
     p_worst.add_argument('amount', type=int, default=1, help='The number of player to query. 10 for Worst 10')
-    p_worst.set_defaults(func=best)
+    p_worst.set_defaults(func=worst)
 
     # import comparison file
     p_import_comp = subparsers.add_parser('import-comparison', help='Query the comparison of several players from a csv file')
