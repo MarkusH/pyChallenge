@@ -161,12 +161,16 @@ def update(args):
         print ""
 
         # constants
-        func = eval(Config.query().get(key="elo.chess.function").getdata("value"))
+        func = Config.query().get(key="elo.chess.function")
         if func is None:
             func = lambda x:(1/(1+(10**(x/400.0))))
-        k = float(Config.query().get(key="elo.chess.k.fide.default").getdata("value"))
+        else:
+            eval(func.getdata("value"))
+        k = Config.query().get(key="elo.chess.k.fide.default")
         if k is None:
             k = 25
+        else:
+            k = float(k.getdata("value"))
 
         # Query all ratings and store it in a dictionary. This is done to store
         # the newest rating data in memory. We do not have to commit.
