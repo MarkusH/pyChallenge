@@ -149,9 +149,9 @@ def import_results(args):
         Rank_Elo.commit()
         Rank_Glicko.commit()
         Match1on1.commit()
-        print "\rImported", line - 1, "entries."
+        print "\rImported %d entries." % (line - 1)
     except csv.Error, e:
-        print "Error importing", args.file, "in line", line
+        print "Error importing %s in line %d" % (args.file, line)
 
 def update(args):
     def update_elo():
@@ -283,7 +283,7 @@ def import_comp(args):
         csvfile.seek(0)
         hasHeader = csv.Sniffer().has_header(sample)
         reader = csv.reader(csvfile, delimiter=',')
-        file = open(args.ofile, 'w')
+        ofile = open(args.ofile, 'w')
         if hasHeader:
             print "\tFirst line of csv file is ignored. It seems to be a header row.\n"
 
@@ -300,18 +300,18 @@ def import_comp(args):
                     outcome = "0"
                 else:
                     outcome = "0.5"
-                file.write("%s,%s,%s,%s\n" % (row[0], row[1], row[2], outcome))
+                ofile.write("%s,%s,%s,%s\n" % (row[0], row[1], row[2], outcome))
             elif line == 0 and hasHeader:
-                file.write("\"%s\",\"%s\",\"%s\",\"Statistically most possible outcome\"\n" % (row[0], row[1], row[2]))
+                ofile.write("\"%s\",\"%s\",\"%s\",\"Statistically most possible outcome\"\n" % (row[0], row[1], row[2]))
             if line % 13 == 0:
                 sys.stdout.write("\r" + "Wrote %d entries to the output file..." % line)
                 sys.stdout.flush()
             line = line + 1
 
     except csv.Error, e:
-        print "An error occured during reading the file."
+        print "Error importing %s in line %d" % (args.ifile, line)
 
-    file.close()
+    ofile.close()
     print ""
 
 def compare(args):
