@@ -280,7 +280,7 @@ def best(args):
         ranks.sort()
         ranks = sorted(ranks, key=lambda x: x.getdata("value"), reverse=True)
         print "Rank\tRating\tNick\tFirst\tName"
-        for i in range(args.amount):
+        for i in range(min(args.amount, len(ranks))):
             player = Player().query().get(player_id=ranks[i].getdata("player_id"))
             print "%d\t%d\t%s\t%s,\t%s" % (i+1, ranks[i].getdata("value"), player.getdata("nickname"), player.getdata("firstname"), player.getdata("lastname"))
 
@@ -298,7 +298,7 @@ def worst(args):
         ranks.sort()
         ranks = sorted(ranks, key=lambda x: x.getdata("value"))
         print "Rank\tRating\tNick\tFirst\tName"
-        for i in range(args.amount):
+        for i in range(min(args.amount, len(ranks))):
             player = Player().query().get(player_id=ranks[i].getdata("player_id"))
             print "%d\t%d\t%s\t%s,\t%s" % (i+1, ranks[i].getdata("value"), player.getdata("nickname"), player.getdata("firstname"), player.getdata("lastname"))
 
@@ -351,14 +351,14 @@ def parse():
     p_value.set_defaults(func=rating)
 
     # best
-    p_value = subparsers.add_parser('best', help='Query the best player(s) in the given game and algorithm')
-    p_value.add_argument('amount', type=int, default=1, help='The number of player to query. 10 for Top 10')
-    p_value.set_defaults(func=best)
+    p_best = subparsers.add_parser('best', help='Query the best player(s) in the given game and algorithm')
+    p_best.add_argument('amount', type=int, default=1, help='The number of player to query. 10 for Top 10')
+    p_best.set_defaults(func=best)
 
     # worst
-    p_value = subparsers.add_parser('worst', help='Query the worst player in the given game and algorithm')
-    p_value.add_argument('amount', type=int, default=1, help='The number of player to query. 10 for Worst 10')
-    p_value.set_defaults(func=worst)
+    p_worst = subparsers.add_parser('worst', help='Query the worst player(s) in the given game and algorithm')
+    p_worst.add_argument('amount', type=int, default=1, help='The number of player to query. 10 for Worst 10')
+    p_worst.set_defaults(func=best)
 
     # import comparison file
     p_import_comp = subparsers.add_parser('import-comparison', help='Query the comparison of several players from a csv file')
