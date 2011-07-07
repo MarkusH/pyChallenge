@@ -2,7 +2,7 @@ import sys
 import argparse
 import pychallenge
 from pychallenge.algorithms import elo
-from pychallenge.models import Match1on1, Player, Rank_Elo, Config
+from pychallenge.models import Match1on1, Player, Rank_Elo, Rank_Glicko, Config
 from pychallenge.ui import utils
 import csv
 

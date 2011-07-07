@@ -1,13 +1,15 @@
 import sys
-from pychallenge.models import Match1on1, Player, Rank_Elo, Config
+from pychallenge.models import Match1on1, Player, Rank_Elo, Rank_Glicko, Config
 
 def get_rating(args):
     def rating_elo(player):
         if player is None:
             return None
         return Rank_Elo.query().get(player_id=player.getdata("player_id"))
-    def rating_glicko():
-        return None
+    def rating_glicko(player):
+        if player is None:
+            return None
+        return Rank_Glicko.query().get(player_id=player.getdata("player_id"))
     def rating_glicko2():
         return None
 
@@ -56,4 +58,7 @@ def add_player(nickname, firstname="", lastname="", commit=False):
         player.save(commit)
         rank = Rank_Elo(player_id=player.getdata('player_id'))
         rank.save(commit)
+        rank = Rank_Glicko(player_id=player.getdata('player_id'))
+        rank.save(commit)
+        
     return player, created
