@@ -52,7 +52,9 @@ def add_result(args):
     :param args: A list with arguments from the argument parser
     :type args: namespace
     """
-
+    if args.player1 is args.player2:
+        print "A player can not play against himself."
+        return
     print "Adding a result for %s" % args.game
     print "\tPlayer 1:", args.player1
     print "\tPlayer 2:", args.player2
@@ -120,6 +122,8 @@ def import_results(args):
         nicknames = []
         for row in reader:
             if line != 0 or (line == 0 and not hasHeader):
+                if row[1] is row[2]:
+                    continue
                 player1 = utils.add_player(row[1], commit=False)
                 player2 = utils.add_player(row[2], commit=False)
 
