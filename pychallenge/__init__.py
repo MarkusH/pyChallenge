@@ -2,8 +2,9 @@
 
 """
 
-__version__ = (0, 1, 'pre-alpha')
-__authors__ = ['fbausch', 'markusd', 'Markus Holtermann', 'rwaury']
+__version__ = (1, 0, 'alpha')
+__authors__ = ['Florian Bausch', 'Markus Döllinger', 'Markus Holtermann',
+               'Robert Waury']
 
 
 def get_version():
