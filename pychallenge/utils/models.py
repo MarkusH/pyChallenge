@@ -157,7 +157,7 @@ class Model(object):
         Calling the save methode will store the object in the databse.
 
         :param commit: If `True` (default), each change will direct affect the
-            database. If `commit` is `False` 
+            database. If `commit` is `False`
         :type commit: Boolean
         """
         if self.pk and self.__meta__['fields'][self.pk].value:
@@ -244,7 +244,6 @@ class Model(object):
         if ret:
             statement, values = ret
             db.execute(statement, values)
-            result = []
             for row in db:
                 i = 0
                 tmp = {}

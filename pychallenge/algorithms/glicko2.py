@@ -115,7 +115,8 @@ def v(muOwn, muList, phiList):
     sum = 0.0
     for phi in phiList:
         g2 = g(phi) ** 2
-        sum += g2 * expectation(muOwn, muList[phiList.index(phi)], phi) * (1.0 - expectation(muOwn, muList[phiList.index(phi)], phi))
+        sum += g2 * expectation(muOwn, muList[phiList.index(phi)], phi) * (1.0
+            - expectation(muOwn, muList[phiList.index(phi)], phi))
     result = sum ** -1
     return result
 
@@ -135,11 +136,13 @@ def delta(muOwn, muList, phiList, outcomeList):
     :return: estimated improvement of player for following matches
     :rtype: float
     """
-    assert muList and phiList and outcomeList and len(muList) == len(phiList) and len(phiList) == len(outcomeList)
+    assert (muList and phiList and outcomeList and len(muList) == len(phiList)
+        and len(phiList) == len(outcomeList))
     vr = v(muOwn, muList, phiList)
     sum = 0.0
     for phi in phiList:
-        sum += g(phi) * (outcomeList[phiList.index(phi)] - expectation(muOwn, muList[phiList.index(phi)], phi))
+        sum += g(phi) * (outcomeList[phiList.index(phi)] -
+            expectation(muOwn, muList[phiList.index(phi)], phi))
     return vr * sum
 
 
@@ -226,7 +229,8 @@ def newSigma(muOwn, muList, phiList, outcomeList, sigmaOwn):
     :return: updated sigma
     :rtype: float
     """
-    assert muList and phiList and outcomeList and len(muList) == len(phiList) and len(phiList) == len(outcomeList)
+    assert (muList and phiList and outcomeList and len(muList) == len(phiList)
+        and len(phiList) == len(outcomeList))
     deltar = delta(muOwn, muList, phiList, outcomeList)
     vr = v(muOwn, muList, phiList)
     a = math.log(sigmaOwn ** 2)
@@ -294,10 +298,12 @@ def newMu(muOwn, newPhi, muList, phiList, outcomeList):
     :return: updated mu
     :rtype: float
     """
-    assert muList and phiList and outcomeList and len(muList) == len(phiList) and len(phiList) == len(outcomeList)
+    assert (muList and phiList and outcomeList and len(muList) == len(phiList)
+        and len(phiList) == len(outcomeList))
     sum = 0.0
     for phi in phiList:
-        sum += (g(phi) * (outcomeList[phiList.index(phi)] - expectation(muOwn, muList[phiList.index(phi)], phi)))
+        sum += (g(phi) * (outcomeList[phiList.index(phi)] -
+            expectation(muOwn, muList[phiList.index(phi)], phi)))
     e = newPhi ** 2 * sum
     mu = muOwn + e
     return mu
@@ -341,7 +347,7 @@ def testGlicko2():
     # g() function for opponents
     print "phi          | g(phi)"
     for RD in RDList:
-        print str(glickoToGlicko2RD(RD)) + " | " + str(g(glickoToGlicko2RD(RD)))
+        print str(glickoToGlicko2RD(RD)) + "|" + str(g(glickoToGlicko2RD(RD)))
         phiList.append(glickoToGlicko2RD(RD))
 
     print ""
@@ -354,7 +360,8 @@ def testGlicko2():
     print "mu muj phij | E(mu, muj, phij)"
     for phi in phiList:
         e = expectation(muOwn, muList[phiList.index(phi)], phi)
-        print str(muOwn) + " " + str(muList[phiList.index(phi)]) + " " + str(phi) + " | " + str(e)
+        print "%s %s %s | %s" % (str(muOwn), str(muList[phiList.index(phi)]),
+            str(phi), str(e))
 
     print ""
 

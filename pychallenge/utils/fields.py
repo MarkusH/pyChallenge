@@ -111,7 +111,6 @@ class FK(Numeric):
         except ValueError:
             return None
 
-
     def related(self):
         """
         """

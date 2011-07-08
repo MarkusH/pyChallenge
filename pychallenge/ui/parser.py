@@ -9,15 +9,11 @@ import csv
 import os
 
 supported_games = ['chess']
-supported_algorithms = {
-    'chess': ['elo', 'glicko', 'glicko2']
-}
-
+supported_algorithms = {'chess': ['elo', 'glicko', 'glicko2']}
 outcomes = {
     0.0: "Player 1 lost",
     1.0: "Player 1 won",
-    0.5: "Draw"
-}
+    0.5: "Draw"}
 
 
 def prepare_args(args):
@@ -107,8 +103,8 @@ def import_config(args):
             line = line + 1
         Config.commit()
         print "\nImported", line - 1, "config entries."
-    except csv.Error, e:
-        print "Error importing", args.file, "in line", line
+    except csv.Error:
+        print "Error importing %s in line %d" % (args.file, line)
 
 
 def import_results(args):
@@ -160,7 +156,7 @@ def import_results(args):
         Rank_Glicko.commit()
         Match1on1.commit()
         print "\rImported %d entries." % (line - 1)
-    except csv.Error, e:
+    except csv.Error:
         print "Error importing %s in line %d" % (args.file, line)
 
 
@@ -210,9 +206,7 @@ def update(args):
     :type args: namespace
     """
 
-    update_funcs = {
-        'elo': update_elo
-    }
+    update_funcs = {'elo': update_elo}
 
     print "Updating the ratings for all players in %s using %s" % (args.game,
         args.algorithm)
@@ -225,7 +219,8 @@ def match(args):
         best = None
         deviation = 99999999
         for r in ratings:
-            if (best is None or abs(r.value.value - rating.value.value) < deviation) and r.player_id.value != rating.player_id.value:
+            if (best is None or abs(r.value.value - rating.value.value) <
+                deviation) and r.player_id.value != rating.player_id.value:
                 best = r
                 deviation = abs(r.value.value - rating.value.value)
         return best
@@ -237,9 +232,7 @@ def match(args):
     :type args: namespace
     """
 
-    match_funcs = {
-        'elo': match_elo
-    }
+    match_funcs = {'elo': match_elo}
 
     rating = utils.get_rating(args)
     if rating is None:
@@ -309,7 +302,8 @@ def predict(args):
         reader = csv.reader(csvfile, delimiter=',')
         ofile = open(args.ofile, 'w')
         if hasHeader:
-            print "\tFirst line of csv file is ignored. It seems to be a header row.\n"
+            print "\tFirst line of csv file is ignored. It seems to be a " \
+                  "header row.\n"
 
         # constants
         conf = utils.get_config(args)
@@ -344,15 +338,17 @@ def predict(args):
                     ratings[0].value = result[0]
                     ratings[1].value = result[1]
 
-                ofile.write("%s,%s,%s,%s\n" % (row[0], row[1], row[2], str(outcome)))
+                ofile.write("%s,%s,%s,%s\n" % (row[0], row[1], row[2],
+                    str(outcome)))
             elif line == 0 and hasHeader:
-                ofile.write("\"%s\",\"%s\",\"%s\",\"Statistically most possible outcome\"\n" % (row[0], row[1], row[2]))
+                ofile.write('"%s","%s","%s","Statistically most possible ' \
+                            'outcome"\n' % (row[0], row[1], row[2]))
             if line % 13 == 0:
-                sys.stdout.write("\r" + "Wrote %d entries to the output file..." % line)
+                sys.stdout.write("\rWrote %d entries to the out file" % line)
                 sys.stdout.flush()
             line = line + 1
 
-    except csv.Error, e:
+    except csv.Error:
         print "Error importing %s in line %d" % (args.ifile, line)
 
     ofile.close()
@@ -371,7 +367,8 @@ def compare(args):
         print "You cannot compare player %s with himself" % args.player1
         return
 
-    print "Comparing the rating of two players in %s with %s:" % (args.game, args.algorithm)
+    print "Comparing the rating of two players in %s with %s:" % (args.game,
+        args.algorithm)
 
     ratings = utils.get_rating(args)
     if ratings is None:
@@ -392,7 +389,8 @@ def compare(args):
         print "\tPlayer %s will (probably) win." % winning_player
         print "\tRank player %s: %d" % (args.player1, value1)
         print "\tRank player %s: %d" % (args.player2, value2)
-        print "\tPlayer %s is %d points better." % (winning_player, abs(value1 - value2))
+        print "\tPlayer %s is %d points better." % (winning_player,
+            abs(value1 - value2))
     else:
         print "Both players have the same elo rank (%d)" % value1
 
@@ -403,11 +401,13 @@ def create_player(args):
     :param args: A list with arguments from the argument parser
     :type args: namespace
     """
-    player, created = utils.add_player(args.nickname, args.firstname, args.lastname, True)
+    player, created = utils.add_player(args.nickname, args.firstname,
+        args.lastname, True)
     if created is True:
         print "The player is now known in the database:"
-        print "ID: %d;\tfirst name: %s;\tlast name: %s;\tnickname: %s" % (player.player_id.value,
-            args.firstname, args.lastname, args.nickname)
+        print "ID: %d;\tfirst name: %s;\tlast name: %s;\tnickname: %s" % (
+            player.player_id.value, args.firstname, args.lastname,
+            args.nickname)
     else:
         print "The player with nickname %s already exists." % args.nickname
 
@@ -419,88 +419,119 @@ def best_worst(args, best):
         print "Rank\tRating\tNick\tFirst\tName"
         for i in range(min(args.amount, len(ranks))):
             player = Player().query().get(player_id=ranks[i].player_id.value)
-            print "%d\t%d\t%s\t%s,\t%s" % (i + 1, ranks[i].value.value, player.nickname.value, player.firstname.value, player.lastname.value)
+            print "%d\t%d\t%s\t%s,\t%s" % (i + 1, ranks[i].value.value,
+                player.nickname.value, player.firstname.value,
+                player.lastname.value)
     """
     Queries the n best or worst players of a given pair of game and algorithm.
     """
 
-    best_worst_funcs = {
-        'elo': best_worst_elo
-    }
+    best_worst_funcs = {'elo': best_worst_elo}
 
-    print "The %s %d players in %s with %s:" % (("Top" if best else "Worst"), args.amount, args.game, args.algorithm)
+    print "The %s %d players in %s with %s:" % (("Top" if best else "Worst"),
+        args.amount, args.game, args.algorithm)
+
     best_worst_funcs[args.algorithm]()
 
 
 def parse():
     parser = argparse.ArgumentParser(prog='pyChallenge')
-    parser.add_argument('-g', '--game', help='The game for the following command. The default value is "chess".')
-    parser.add_argument('-a', '--algorithm', help='The algorithm for the following command. The default value is "elo"')
+    parser.add_argument('-g', '--game', help='The game for the following ' \
+        'command. The default value is "chess".')
+    parser.add_argument('-a', '--algorithm', help='The algorithm for the ' \
+        'following command. The default value is "elo"')
     parser.add_argument('-v', '--version', action='version',
-        version="%s version: %s" % ("%(prog)s", pychallenge.get_version()), help='Print out the version of pyChallenge and exit')
+        version="%s version: %s" % ("%(prog)s", pychallenge.get_version()),
+        help='Print out the version of pyChallenge and exit')
     subparsers = parser.add_subparsers(help='sub-command help')
 
     # import config
-    p_config = subparsers.add_parser('import-config', help='Update the config table with a given config file in csv format.')
+    p_config = subparsers.add_parser('import-config',
+        help='Update the config table with a given config file in csv format.')
     p_config.add_argument('file', help='The (csv) config file to import')
     p_config.set_defaults(func=import_config)
 
     # import results
-    p_import = subparsers.add_parser('import-results', help='Import data to the result table from a csv file. This only adds the matches but does not compute any ratings.')
+    p_import = subparsers.add_parser('import-results',
+        help='Import data to the result table from a csv file. This only ' \
+             'adds the matches but does not compute any ratings.')
     p_import.add_argument('file', help='The file to import')
     p_import.set_defaults(func=import_results)
 
     # add result
-    p_add_result = subparsers.add_parser('add-result', help='Add a result to the result table. This only adds the matche but does not compute any ratings.')
+    p_add_result = subparsers.add_parser('add-result',
+        help='Add a result to the result table. This only adds the matche ' \
+             'but does not compute any ratings.')
     p_add_result.add_argument('player1', help='Nickname of player 1')
     p_add_result.add_argument('player2', help='Nickname of player 2')
-    p_add_result.add_argument('outcome', type=float, help='Outcome of the game: 0 = player 1 lost; 0.5 = draw; 1 = player 1 won')
+    p_add_result.add_argument('outcome', type=float, help='Outcome of the ' \
+        'game: 0 = player 1 lost; 0.5 = draw; 1 = player 1 won')
     p_add_result.add_argument('date', type=int, help='The date of the game')
     p_add_result.set_defaults(func=add_result)
 
     # update
-    p_update = subparsers.add_parser('update', help='Update the rating values for all players in the given game for the specified algorithm.')
+    p_update = subparsers.add_parser('update',
+        help='Update the rating values for all players in the given game ' \
+             'for the specified algorithm.')
     p_update.set_defaults(func=update)
 
     # match
-    p_match = subparsers.add_parser('match', help='Find the best opponent for the given player in the specified game with the selected algorithm.')
+    p_match = subparsers.add_parser('match',
+        help='Find the best opponent for the given player in the specified ' \
+             'game with the selected algorithm.')
     p_match.add_argument('player', help='Nickname of the player')
     p_match.set_defaults(func=match)
 
     # get value
-    p_value = subparsers.add_parser('rating', help='Query the rating of the given player in the specified game using the selected algorithm.')
+    p_value = subparsers.add_parser('rating', help='Query the rating of the ' \
+        'given player in the specified game using the selected algorithm.')
     p_value.add_argument('player', help='Nickname of the player')
     p_value.set_defaults(func=rating)
 
     # best
-    p_best = subparsers.add_parser('best', help='Query the best player(s) in the given game and algorithm.')
-    p_best.add_argument('amount', type=int, default=1, help='The number of players to query. "10" for Top 10')
+    p_best = subparsers.add_parser('best', help='Query the best player(s) ' \
+        'in the given game and algorithm.')
+    p_best.add_argument('amount', type=int, default=1, help='The number of ' \
+        'players to query. "10" for Top 10')
     p_best.set_defaults(func=lambda x: best_worst(x, True))
 
     # worst
-    p_worst = subparsers.add_parser('worst', help='Query the worst player(s) in the given game and algorithm.')
-    p_worst.add_argument('amount', type=int, default=1, help='The number of player to query. "10" for Worst 10')
+    p_worst = subparsers.add_parser('worst', help='Query the worst ' \
+        'player(s) in the given game and algorithm.')
+    p_worst.add_argument('amount', type=int, default=1, help='The number of ' \
+        'player to query. "10" for Worst 10')
     p_worst.set_defaults(func=lambda x: best_worst(x, False))
 
     # predict
-    p_predict = subparsers.add_parser('predict', help='Predict the matches listed in a csv file and write the predicted results to another csv file.')
+    p_predict = subparsers.add_parser('predict',
+        help='Predict the matches listed in a csv file and write the ' \
+             'predicted results to another csv file.')
     p_predict.add_argument('ifile', help='The file to import')
     p_predict.add_argument('ofile', help='The output file')
-    p_predict.add_argument('-i', '--incremental', action="store_true", help='If specified, updates the ratings after each match on-the-fly.' +
-        'This does not set any values in the database. If not specified, uses the current ratings for each listed game.')
+    p_predict.add_argument('-i', '--incremental', action="store_true",
+        help='If specified, updates the ratings after each match on-the-fly.' \
+        ' This does not set any values in the database. If not specified, ' \
+        'uses the current ratings for each listed game.')
     p_predict.set_defaults(func=predict)
 
     # compare two players
-    p_compare = subparsers.add_parser('compare', help='Compare two players in the specified game with the given algorithm and predict who will win.')
+    p_compare = subparsers.add_parser('compare',
+        help='Compare two players in the specified game with the given ' \
+             'algorithm and predict who will win.')
     p_compare.add_argument('player1', help='Nickname of player 1')
     p_compare.add_argument('player2', help='Nickname of player 2')
     p_compare.set_defaults(func=compare)
 
     # create new player
-    p_create_player = subparsers.add_parser('create-player', help='Creates a new player in the database and initializes his rating with the default values.')
-    p_create_player.add_argument('nickname', help='Nickname for the new player')
-    p_create_player.add_argument('firstname', type=unicode, help='First name of the new player')
-    p_create_player.add_argument('lastname', type=unicode, help='Last name of the new player')
+    p_create_player = subparsers.add_parser('create-player',
+        help='Creates a new player in the database and initializes his ' \
+              'rating with the default values.')
+    p_create_player.add_argument('nickname',
+        help='Nickname for the new player')
+    p_create_player.add_argument('firstname', type=unicode,
+        help='First name of the new player')
+    p_create_player.add_argument('lastname', type=unicode,
+        help='Last name of the new player')
     p_create_player.set_defaults(func=create_player)
 
     args = parser.parse_args()

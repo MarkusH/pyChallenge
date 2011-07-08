@@ -1,23 +1,25 @@
 # -*- coding: utf-8 -*-
-import sys
-from pychallenge.models import Match1on1, Player, Rank_Elo, Rank_Glicko, Config
+from pychallenge.models import Player, Rank_Elo, Rank_Glicko, Config
+
 
 def get_rating(args, p1=None, p2=None):
     def rating_elo(player):
         if player is None:
             return None
         return Rank_Elo.query().get(player_id=player.player_id.value)
+
     def rating_glicko(player):
         if player is None:
             return None
         return Rank_Glicko.query().get(player_id=player.player_id.value)
+
     def rating_glicko2():
         return None
 
     """
     Queries the rating of a given player or two given players. Returns one
-    rank table, if "args.player" is defined. Returns a tupel of two rank tables,
-    if "args.player1" and "args.player2" is defined.
+    rank table, if "args.player" is defined. Returns a tupel of two rank
+    tables, if "args.player1" and "args.player2" is defined.
 
     :param args: A list with arguments from the argument parser
     :type args: namespace
@@ -27,26 +29,29 @@ def get_rating(args, p1=None, p2=None):
     """
 
     rating_funcs = {
-        'elo' : rating_elo,
-        'glicko' : rating_glicko,
-        'glicko2' : rating_glicko2
-    }
+        'elo': rating_elo,
+        'glicko': rating_glicko,
+        'glicko2': rating_glicko2}
 
     if p1 is not None and p2 is not None:
         player1 = Player.query().get(nickname=p1)
         player2 = Player.query().get(nickname=p2)
-        return (rating_funcs[args.algorithm](player1), rating_funcs[args.algorithm](player2))
+        return (rating_funcs[args.algorithm](player1),
+            rating_funcs[args.algorithm](player2))
     elif args.__dict__.get("player", None):
         player = Player.query().get(nickname=args.player)
         if player is None:
             return None
         return rating_funcs[args.algorithm](player)
-    elif args.__dict__.get("player1", None) and args.__dict__.get("player2", None):
+    elif args.__dict__.get("player1", None) and args.__dict__.get("player2",
+                                                                  None):
         player1 = Player.query().get(nickname=args.player1)
         player2 = Player.query().get(nickname=args.player2)
-        return (rating_funcs[args.algorithm](player1), rating_funcs[args.algorithm](player2))
+        return (rating_funcs[args.algorithm](player1),
+            rating_funcs[args.algorithm](player2))
 
     return None
+
 
 def add_player(nickname, firstname="", lastname="", commit=False):
     """
@@ -61,13 +66,14 @@ def add_player(nickname, firstname="", lastname="", commit=False):
     :type lastname: string
     :param commit: True if the rows should be committed
     :type commit: bool
-    :return: Tupel (the player model, boolean (False, if player already existed))
+    :return: Tupel (the player model, False if player already existed)
     """
     player = Player.query().get(nickname=nickname)
     created = False
     if player == None:
         created = True
-        player = Player(firstname=firstname, lastname=lastname, nickname=nickname)
+        player = Player(firstname=firstname, lastname=lastname,
+            nickname=nickname)
         player.save(commit)
         rank = Rank_Elo(player_id=player.player_id.value)
         rank.save(commit)
@@ -75,6 +81,7 @@ def add_player(nickname, firstname="", lastname="", commit=False):
         rank.save(commit)
 
     return player, created
+
 
 #TODO: make this dependend on algorithm (and game)?
 def get_config(args):
@@ -87,7 +94,7 @@ def get_config(args):
     # ELO
     func = Config.query().get(key="elo.chess.function")
     if func is None:
-        func = lambda x:(1/(1+(10**(x/400.0))))
+        func = lambda x: (1 / (1 + (10 ** (x / 400.0))))
     else:
         func = eval(func.value.value)
     dict["elo.chess.function"] = func
