@@ -4,13 +4,14 @@ computes Glicko-2 rating of a player
 
 player data:
     * rating:  (initial 1500) (from Glicko)
-    * RD:      level of certainty (initial 350) (Ratings Deviation) (from Glicko)
+    * RD:      level of certainty, initial 350 (Ratings Deviation) from Glicko
     * sigma:   player's rating volatility (initial 0.06)
     * mu:      rating
     * phi:     deviation
 
 constants:
-    * tau:    constrains volatility over time (chosen for each game - between 0.3 and 1.2)
+    * tau:    constrains volatility over time
+              (chosen for each game - between 0.3 and 1.2)
     * precision:  desired precision
     * RDconst = 173.7178
 
@@ -25,6 +26,7 @@ import math
 
 precision = 10
 
+
 def getPrecision():
     """
     returns desired precision
@@ -33,7 +35,8 @@ def getPrecision():
     :return: desired precision
     :rtype: float
     """
-    return 10**( -1 * precision )
+    return 10 ** (-1 * precision)
+
 
 def glickoToGlicko2rating(rating):
     """
@@ -44,7 +47,8 @@ def glickoToGlicko2rating(rating):
     :return: Glicko-2 mu
     :rtype: float
     """
-    return (rating - 1500)/173.7178
+    return (rating - 1500) / 173.7178
+
 
 def glickoToGlicko2RD(RD):
     """
@@ -55,7 +59,8 @@ def glickoToGlicko2RD(RD):
     :return: Glicko-2 phi
     :rtype: float
     """
-    return RD/173.7178
+    return RD / 173.7178
+
 
 def glicko2ToGlickoMu(mu):
     """
@@ -68,6 +73,7 @@ def glicko2ToGlickoMu(mu):
     """
     return (173.7178 * mu) + 1500
 
+
 def glicko2ToGlickoPhi(phi):
     """
     converts Glicko-2 phi to Glicko RD
@@ -79,6 +85,7 @@ def glicko2ToGlickoPhi(phi):
     """
     return 173.7178 * phi
 
+
 def g(phi):
     """
     Glicko-2 helper function
@@ -88,7 +95,8 @@ def g(phi):
     :return: intermediate result
     :rtype: float
     """
-    return (math.sqrt( 1 + (( 3 * ( phi**2 ))/(math.pi * math.pi))))**-1
+    return (math.sqrt(1 + ((3 * (phi ** 2)) / (math.pi * math.pi)))) ** -1
+
 
 def v(muOwn, muList, phiList):
     """
@@ -106,10 +114,11 @@ def v(muOwn, muList, phiList):
     assert muList and phiList and len(muList) == len(phiList)
     sum = 0.0
     for phi in phiList:
-        g2 = g(phi)**2
-        sum += g2 * expectation(muOwn, muList[phiList.index(phi)], phi) * ( 1.0 - expectation(muOwn, muList[phiList.index(phi)], phi) )
-    result = sum**-1
+        g2 = g(phi) ** 2
+        sum += g2 * expectation(muOwn, muList[phiList.index(phi)], phi) * (1.0 - expectation(muOwn, muList[phiList.index(phi)], phi))
+    result = sum ** -1
     return result
+
 
 def delta(muOwn, muList, phiList, outcomeList):
     """
@@ -130,8 +139,9 @@ def delta(muOwn, muList, phiList, outcomeList):
     vr = v(muOwn, muList, phiList)
     sum = 0.0
     for phi in phiList:
-        sum += g(phi) * ( outcomeList[phiList.index(phi)] - expectation(muOwn, muList[phiList.index(phi)], phi) )
+        sum += g(phi) * (outcomeList[phiList.index(phi)] - expectation(muOwn, muList[phiList.index(phi)], phi))
     return vr * sum
+
 
 def expectation(muOwn, muOpponent, phiOpponent):
     """
@@ -146,8 +156,9 @@ def expectation(muOwn, muOpponent, phiOpponent):
     :return: expected outcome
     :rtype: float
     """
-    result = (1.0 + math.exp(-g(phiOpponent) * (muOwn - muOpponent)))**-1
+    result = (1.0 + math.exp(-g(phiOpponent) * (muOwn - muOpponent))) ** -1
     return result
+
 
 def h1(x, a, tau, d, delta):
     """
@@ -166,9 +177,10 @@ def h1(x, a, tau, d, delta):
     :return: intermediate result
     :rtype: float
     """
-    al = (- (x - a) / tau**2) - ((0.5 * math.exp(x)) / d)
-    bl = 0.5 * math.exp(x) * (delta / d)**2
+    al = (- (x - a) / tau ** 2) - ((0.5 * math.exp(x)) / d)
+    bl = 0.5 * math.exp(x) * (delta / d) ** 2
     return al + bl
+
 
 def h2(tau, x, phi, v, d, delta):
     """
@@ -190,11 +202,12 @@ def h2(tau, x, phi, v, d, delta):
     :rtype: float
 
     """
-    al = -1 / tau**2
-    bl = (0.5 * math.exp(x) * (phi**2 + v)) / d**2
-    cl = phi**2 + v - math.exp(x)
-    dl = (0.5 * delta**2 * math.exp(x) * cl) / d**3
+    al = -1 / tau ** 2
+    bl = (0.5 * math.exp(x) * (phi ** 2 + v)) / d ** 2
+    cl = phi ** 2 + v - math.exp(x)
+    dl = (0.5 * delta ** 2 * math.exp(x) * cl) / d ** 3
     return al - bl + dl
+
 
 def newSigma(muOwn, muList, phiList, outcomeList, sigmaOwn):
     """
@@ -216,17 +229,18 @@ def newSigma(muOwn, muList, phiList, outcomeList, sigmaOwn):
     assert muList and phiList and outcomeList and len(muList) == len(phiList) and len(phiList) == len(outcomeList)
     deltar = delta(muOwn, muList, phiList, outcomeList)
     vr = v(muOwn, muList, phiList)
-    a = math.log(sigmaOwn**2)
+    a = math.log(sigmaOwn ** 2)
     x = a
     xi = 0.0
     # repeat until x and xi are close
     while getPrecision() >= math.fabs(x - xi):
-        dr = phi**2 + vr + math.exp(x)
+        dr = phi ** 2 + vr + math.exp(x)
         h1r = h1(x, a, tau, dr, deltar)
         h2r = h2(tau, x, phiOwn, vr, dr, deltar)
         xi = x
-        x = x - ( h1r / h2r )
-    return math.exp( x / 2 )
+        x = x - (h1r / h2r)
+    return math.exp(x / 2)
+
 
 def phiStar(phiOwn, sigmaOwn):
     """
@@ -241,8 +255,9 @@ def phiStar(phiOwn, sigmaOwn):
     :return: phiStar / intermediate result
     :rtype: float
     """
-    ps = math.sqrt(phiOwn**2 + sigmaOwn**2)
+    ps = math.sqrt(phiOwn ** 2 + sigmaOwn ** 2)
     return ps
+
 
 def newPhi(phiOwn, newSigma, variance):
     """
@@ -258,8 +273,9 @@ def newPhi(phiOwn, newSigma, variance):
     :rtype: float
     """
     ps = phiStar(phiOwn, newSigma)
-    phi = math.sqrt(( 1 / ps**2 ) + ( 1 / variance ))**-1
+    phi = math.sqrt((1 / ps ** 2) + (1 / variance)) ** -1
     return phi
+
 
 def newMu(muOwn, newPhi, muList, phiList, outcomeList):
     """
@@ -282,9 +298,10 @@ def newMu(muOwn, newPhi, muList, phiList, outcomeList):
     sum = 0.0
     for phi in phiList:
         sum += (g(phi) * (outcomeList[phiList.index(phi)] - expectation(muOwn, muList[phiList.index(phi)], phi)))
-    e = newPhi**2 * sum
+    e = newPhi ** 2 * sum
     mu = muOwn + e
     return mu
+
 
 ############################################################################
 # for testing purposes only                                                #
@@ -337,7 +354,7 @@ def testGlicko2():
     print "mu muj phij | E(mu, muj, phij)"
     for phi in phiList:
         e = expectation(muOwn, muList[phiList.index(phi)], phi)
-        print str(muOwn) + " " + str(muList[phiList.index(phi)]) + " " + str(phi) +  " | " + str(e)
+        print str(muOwn) + " " + str(muList[phiList.index(phi)]) + " " + str(phi) + " | " + str(e)
 
     print ""
 

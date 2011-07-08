@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+
+
 def elo1on1(elo1, elo2, outcome, k, function):
     """
     computes elo for two players

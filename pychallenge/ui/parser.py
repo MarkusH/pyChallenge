@@ -10,7 +10,7 @@ import os
 
 supported_games = ['chess']
 supported_algorithms = {
-    'chess' : ['elo', 'glicko', 'glicko2']
+    'chess': ['elo', 'glicko', 'glicko2']
 }
 
 outcomes = {
@@ -18,6 +18,7 @@ outcomes = {
     1.0: "Player 1 won",
     0.5: "Draw"
 }
+
 
 def prepare_args(args):
     """
@@ -33,19 +34,22 @@ def prepare_args(args):
     if (args.game == None):
         args.game = "chess"
     elif (not args.game in ['chess']):
-        print "Error:", args.game, "is not a valid game! Choose from", supported_games
+        print "Error: %s is not a valid game! Choose from %s" % (args.game,
+            supported_games)
         return False
 
     if (args.algorithm == None):
         args.algorithm = "elo"
     elif (not args.algorithm in supported_algorithms[args.game]):
-        print "Error:", args.algorithm, "is not a valid algorithm for", args.game + "! Choose from", supported_algorithms[args.game]
+        print "Error: %s is not a valid algorithm for %s! Choose from %s" % (
+            args.algorithm, args.game, supported_algorithms[args.game])
         return False
     return True
 
 #####################################################################
 #                               sub commands                        #
 #####################################################################
+
 
 def add_result(args):
     """
@@ -69,12 +73,14 @@ def add_result(args):
     pid1 = player1.player_id.value
     pid2 = player2.player_id.value
 
-    dbRow = Match1on1(player1=pid1, player2=pid2, outcome=args.outcome, date=args.date)
+    dbRow = Match1on1(player1=pid1, player2=pid2, outcome=args.outcome,
+        date=args.date)
     dbRow.save(commit=True)
 
     print "Player id for %s is %s" % (args.player1, pid1)
     print "Player id for %s is %s" % (args.player2, pid2)
     print "Done"
+
 
 def import_config(args):
     """
@@ -103,6 +109,7 @@ def import_config(args):
         print "\nImported", line - 1, "config entries."
     except csv.Error, e:
         print "Error importing", args.file, "in line", line
+
 
 def import_results(args):
     """
@@ -139,7 +146,9 @@ def import_results(args):
                     player2, created = utils.add_player(row[2], commit=False)
                     players[player2.nickname.value] = player2
 
-                dbRow = Match1on1(player1=player1.player_id.value, player2=player2.player_id.value, outcome=row[3], date=row[0])
+                dbRow = Match1on1(player1=player1.player_id.value,
+                    player2=player2.player_id.value, outcome=row[3],
+                    date=row[0])
                 dbRow.save(commit=False)
 
             if line % 100 == 0:
@@ -153,6 +162,7 @@ def import_results(args):
         print "\rImported %d entries." % (line - 1)
     except csv.Error, e:
         print "Error importing %s in line %d" % (args.file, line)
+
 
 def update(args):
     def update_elo():
@@ -178,7 +188,8 @@ def update(args):
             rating1 = rdict[match.player1.value]
             rating2 = rdict[match.player2.value]
 
-            result = elo.elo1on1(rating1.value.value, rating2.value.value, match.outcome.value, k, func)
+            result = elo.elo1on1(rating1.value.value, rating2.value.value,
+                match.outcome.value, k, func)
             rating1.value = result[0]
             rating2.value = result[1]
 
@@ -200,11 +211,13 @@ def update(args):
     """
 
     update_funcs = {
-        'elo' : update_elo
+        'elo': update_elo
     }
 
-    print "Updating the ratings for all players in", args.game, "using", args.algorithm
-    update_funcs[args.algorithm]();
+    print "Updating the ratings for all players in %s using %s" % (args.game,
+        args.algorithm)
+    update_funcs[args.algorithm]()
+
 
 def match(args):
     def match_elo(rating):
@@ -225,7 +238,7 @@ def match(args):
     """
 
     match_funcs = {
-        'elo' : match_elo
+        'elo': match_elo
     }
 
     rating = utils.get_rating(args)
@@ -233,17 +246,20 @@ def match(args):
         print "Player %s is not known." % args.player
         return
 
-    print "Looking for the best opponent for player %s..." % args.player 
+    print "Looking for the best opponent for player %s..." % args.player
 
-    opponent = match_funcs[args.algorithm](rating);
+    opponent = match_funcs[args.algorithm](rating)
 
     if opponent is None:
         print "No opponent found."
         return
 
-    print "Best opponent for player %s with rating %d is:" % (args.player, rating.value.value)
+    print "Best opponent for player %s with rating %d is:" % (args.player,
+        rating.value.value)
     other = Player.query().get(player_id=opponent.player_id.value)
-    print "\tPlayer %s with rating %d." % (other.nickname.value, opponent.value.value)
+    print "\tPlayer %s with rating %d." % (other.nickname.value,
+        opponent.value.value)
+
 
 def rating(args):
     """
@@ -256,30 +272,35 @@ def rating(args):
     player = utils.get_rating(args)
 
     if player is None:
-        print "The rating for player %s in %s using %s is not known." % (args.player, args.game, args.algorithm)
+        print "The rating for player %s in %s using %s is not known." % (
+            args.player, args.game, args.algorithm)
     else:
-        print "The rating for player %s in %s using %s is %d." % (args.player, args.game, args.algorithm, player.value.value)
+        print "The rating for player %s in %s using %s is %d." % (args.player,
+            args.game, args.algorithm, player.value.value)
 
 
 def predict(args):
     """
-    Reads match constellations from an input file and writes the results to a specified output file.
+    Reads match constellations from an input file and writes the
+    results to a specified output file.
 
     :param args: A list with arguments from the argument parser
     :type args: namespace
     """
-    ifile_check = args.ifile if args.ifile[0] is "/" else "%s/%s" % (os.getcwd(), args.ifile)
-    ofile_check = args.ofile if args.ofile[0] is "/" else "%s/%s" % (os.getcwd(), args.ofile)
+    ifile_check = args.ifile if args.ifile[0] is "/" else "%s/%s" % (
+        os.getcwd(), args.ifile)
+    ofile_check = args.ofile if args.ofile[0] is "/" else "%s/%s" % (
+        os.getcwd(), args.ofile)
 
     if (ifile_check == ofile_check):
-        print "You tried to overwrite your input with your output file.\nAborted."
+        print "You tried to overwrite your input with your output file."
+        print "Aborted."
         return
 
     try:
-        modes = { True: "incremental", False: "non-incremental" }
+        modes = {True: "incremental", False: "non-incremental"}
         print "Predicting the matches in %s mode" % modes[args.incremental]
         print "Open %s and write into %s..." % (args.ifile, args.ofile)
-        print "\tThis may take some time depending of the size of the input file."
         line = 0
         csvfile = open(args.ifile, 'rb')
         sample = csvfile.read(1024)
@@ -337,6 +358,7 @@ def predict(args):
     ofile.close()
     print ""
 
+
 def compare(args):
     """
     Compares the rating of two given players.
@@ -351,7 +373,7 @@ def compare(args):
 
     print "Comparing the rating of two players in %s with %s:" % (args.game, args.algorithm)
 
-    ratings = utils.get_rating(args);
+    ratings = utils.get_rating(args)
     if ratings is None:
         print "Both players are not known!"
         return
@@ -374,6 +396,7 @@ def compare(args):
     else:
         print "Both players have the same elo rank (%d)" % value1
 
+
 def create_player(args):
     """
     Creates a new player (as specified in args)
@@ -388,6 +411,7 @@ def create_player(args):
     else:
         print "The player with nickname %s already exists." % args.nickname
 
+
 def best_worst(args, best):
     def best_worst_elo():
         ranks = Rank_Elo.query().all()
@@ -395,17 +419,18 @@ def best_worst(args, best):
         print "Rank\tRating\tNick\tFirst\tName"
         for i in range(min(args.amount, len(ranks))):
             player = Player().query().get(player_id=ranks[i].player_id.value)
-            print "%d\t%d\t%s\t%s,\t%s" % (i+1, ranks[i].value.value, player.nickname.value, player.firstname.value, player.lastname.value)
+            print "%d\t%d\t%s\t%s,\t%s" % (i + 1, ranks[i].value.value, player.nickname.value, player.firstname.value, player.lastname.value)
     """
     Queries the n best or worst players of a given pair of game and algorithm.
     """
 
     best_worst_funcs = {
-        'elo' : best_worst_elo
+        'elo': best_worst_elo
     }
 
     print "The %s %d players in %s with %s:" % (("Top" if best else "Worst"), args.amount, args.game, args.algorithm)
     best_worst_funcs[args.algorithm]()
+
 
 def parse():
     parser = argparse.ArgumentParser(prog='pyChallenge')
