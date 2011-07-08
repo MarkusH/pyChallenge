@@ -107,3 +107,25 @@ def get_config(args):
     dict["elo.chess.k"] = k
 
     return dict
+
+
+def print_table(table):
+    def get_max_width(table, index):
+        """Get the maximum width of the given column index"""
+
+        return max([len(str(row[index])) for row in table])
+
+    """
+    Prints the given table to stdout. Automatically aligns the columns.
+    """
+    col_paddings = []
+
+    for i in range(len(table[0])):
+        col_paddings.append(get_max_width(table, i))
+
+    for row in table:
+        print row[0].ljust(col_paddings[0] + 1),
+        for i in range(1, len(row)):
+            col = str(row[i]).rjust(col_paddings[i] + 2)
+            print col,
+        print ""

@@ -472,7 +472,55 @@ def clear(args):
     # clear matches
     if args.matches:
         Match1on1.query().truncate()
-        pass
+        
+
+def history(args):
+
+    # store all players in a dict (player_id --> player) and get player1/2
+    players = Player.query().all()
+    pdict = {}
+    for player in players:
+        pdict[player.player_id.value] = player
+        if player.nickname.value == args.player1:
+            player1 = player
+        if player.nickname.value == args.player2:
+            player2 = player
+
+    if args.player2 is None:
+        # the table to print out
+        table = [['Opponent', 'Outcome', 'Date']]
+    
+        # get all matches with player 1
+        matches = Match1on1.query().filter(
+            player1=player1.player_id.value).filter(
+            player2=player1.player_id.value).join_or().all()
+
+        # iterate over all matches
+        for match in matches:
+            # check who the opponent is and who actually won
+            opponent = match.player1.value
+            if match.outcome.value == 0.5:
+                outcome = "Draw"
+            if opponent == player1.player_id.value:
+                opponent = match.player2.value
+                if match.outcome.value == 1:
+                    outcome = "Won"
+                elif match.outcome.value == 0:
+                    outcome = "Lost"
+            else:
+                if match.outcome.value == 1:
+                    outcome = "Lost"
+                elif match.outcome.value == 0:
+                    outcome = "Won"
+            
+            table.append([pdict[opponent].nickname.value, outcome,
+                match.date.value])
+
+        # finally print the table
+        utils.print_table(table)
+    else:
+        # TODO: implement history for two players
+        print "Not implemented yet for two players"
 
 
 def parse():
@@ -501,7 +549,7 @@ def parse():
 
     # add result
     p_add_result = subparsers.add_parser('add-result',
-        help='Add a result to the result table. This only adds the matche ' \
+        help='Add a result to the result table. This only adds the matches ' \
              'but does not compute any ratings.')
     p_add_result.add_argument('player1', help='Nickname of player 1')
     p_add_result.add_argument('player2', help='Nickname of player 2')
@@ -532,14 +580,14 @@ def parse():
     # best
     p_best = subparsers.add_parser('best', help='Query the best player(s) ' \
         'in the given game and algorithm.')
-    p_best.add_argument('amount', type=int, default=1, help='The number of ' \
+    p_best.add_argument('amount', nargs='?', type=int, default=1, help='The number of ' \
         'players to query. "10" for Top 10')
     p_best.set_defaults(func=lambda x: best_worst(x, True))
 
     # worst
     p_worst = subparsers.add_parser('worst', help='Query the worst ' \
         'player(s) in the given game and algorithm.')
-    p_worst.add_argument('amount', type=int, default=1, help='The number of ' \
+    p_worst.add_argument('amount', nargs='?', type=int, default=1, help='The number of ' \
         'player to query. "10" for Worst 10')
     p_worst.set_defaults(func=lambda x: best_worst(x, False))
 
@@ -583,6 +631,14 @@ def parse():
     p_clear.add_argument('-m', '--matches', action='store_true',
         help='Clear all matches')
     p_clear.set_defaults(func=clear)
+
+    # history
+    p_history = subparsers.add_parser('history',
+        help='Shows the history of the given player(s)')
+    p_history.add_argument('player1', help='Nickname of player 1')
+    p_history.add_argument('player2', nargs='?', default=None,
+        help='Nickname of player 2')
+    p_history.set_defaults(func=history)
 
     args = parser.parse_args()
     if (not prepare_args(args)):
