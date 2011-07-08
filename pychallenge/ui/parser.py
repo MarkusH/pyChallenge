@@ -434,6 +434,47 @@ def best_worst(args, best):
     best_worst_funcs[args.algorithm]()
 
 
+def clear(args):
+    def clear_elo():
+        ranks = Rank_Elo.query().all()
+        for rank in ranks:
+            rank.value = 1500
+            rank.save(commit=False)
+        Rank_Elo.commit()
+
+    def clear_glicko():
+        ranks = Rank_Glicko.query().all()
+        for rank in ranks:
+            rank.rd = 350
+            rank.rating = 350
+            rank.last_match = 0
+            rank.save(commit=False)
+        Rank_Glicko.commit()
+
+    """
+    Clears ranks or matches or both.
+    """
+
+    if not args.ranks and not args.matches:
+        print "You have to specify either --ranks or --matches, or both."
+        return
+
+    # (ranks, matches) --> output string
+    output = {(True, True): 'ranks and matches', (True, False): 'ranks',
+        (False, True): 'matches', (False, False): ''}
+    print "Clearing %s..." % output[args.ranks, args.matches]
+
+    # clear ranks
+    if args.ranks:
+        clear_funcs = {'elo': clear_elo, 'glicko': clear_glicko}
+        clear_funcs[args.algorithm]()
+
+    # clear matches
+    if args.matches:
+        Match1on1.query().truncate()
+        pass
+
+
 def parse():
     parser = argparse.ArgumentParser(prog='pyChallenge')
     parser.add_argument('-g', '--game', help='The game for the following ' \
@@ -533,6 +574,15 @@ def parse():
     p_create_player.add_argument('lastname', type=unicode,
         help='Last name of the new player')
     p_create_player.set_defaults(func=create_player)
+
+    # clear
+    p_clear = subparsers.add_parser('clear',
+        help = 'Clears ratings and/or matches. See --ranks and --matches.')
+    p_clear.add_argument('-r', '--ranks', action='store_true',
+        help='Clear the ranks and set the default values for all players')
+    p_clear.add_argument('-m', '--matches', action='store_true',
+        help='Clear all matches')
+    p_clear.set_defaults(func=clear)
 
     args = parser.parse_args()
     if (not prepare_args(args)):
