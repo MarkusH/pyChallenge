@@ -49,9 +49,12 @@ class Model(object):
         ...
         >>> Player.commit()
         >>> Player.query().all()
-        [<player pk=2>, <player pk=3>, <player pk=4>, <player pk=5>, <player pk=6>, <player pk=7>]
-        >>> Player.query().filter(player_id__lt=4).filter(player_id__ge=6).all()
-        >>> Player.query().filter(player_id__lt=4).filter(player_id__ge=6).join_or().all()
+        [<player pk=2>, <player pk=3>, <player pk=4>, <player pk=5>,
+                <player pk=6>, <player pk=7>]
+        >>> Player.query().filter(player_id__lt=4).filter(player_id__ge=6)\
+        ...     .all()
+        >>> Player.query().filter(player_id__lt=4).filter(player_id__ge=6)\
+        ...     .join_or().all()
         [<player pk=2>, <player pk=3>, <player pk=6>, <player pk=7>]
         >>> Player.query().truncate()
         >>> Player.query().drop()
@@ -342,7 +345,7 @@ class Model(object):
         cls.__query__ = cls.__query__.limit(count, offset)
         return cls
 
-    def _set_meta_field(self, name, value=None, instance=None):
+    def _set_meta_field(self, name, **kwargs):
         """
         :param name: This is the name of a field
         :param value: The value that will be assigned to the field
@@ -352,7 +355,14 @@ class Model(object):
         :type value: variable
         :type instance: :py:class:`pychallenge.utils.fields.Field`
         """
-        assert bool(value) ^ bool(instance)
+        value = instance = None
+        try:
+            instance = kwargs.pop('instance')
+        except KeyError:
+            try:
+                value = kwargs.pop('value')
+            except KeyError:
+                raise AssertionError
 
         if not (instance or name in self.__meta__['fields']):
             raise AttributeError('Field "%s" does not exists in model "%s"' %
