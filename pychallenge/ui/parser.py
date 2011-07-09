@@ -124,6 +124,9 @@ def import_results(args):
         csvfile.seek(0)
         hasHeader = csv.Sniffer().has_header(sample)
         reader = csv.reader(csvfile, delimiter=',')
+        if hasHeader:
+            print "\tFirst line of csv file is ignored. It seems to be a " \
+                  "header row.\n"
 
         # nickname --> player
         players = {}
@@ -155,9 +158,11 @@ def import_results(args):
         Rank_Elo.commit()
         Rank_Glicko.commit()
         Match1on1.commit()
-        print "\rImported %d entries." % (line - 1)
+        print "\rImported %d entries." % (line - (1 if hasHeader else 0))
     except csv.Error:
         print "Error importing %s in line %d" % (args.file, line)
+
+    csvfile.close()
 
 
 def update(args):
@@ -280,12 +285,7 @@ def predict(args):
     :param args: A list with arguments from the argument parser
     :type args: namespace
     """
-    ifile_check = args.ifile if args.ifile[0] is "/" else "%s/%s" % (
-        os.getcwd(), args.ifile)
-    ofile_check = args.ofile if args.ofile[0] is "/" else "%s/%s" % (
-        os.getcwd(), args.ofile)
-
-    if (ifile_check == ofile_check):
+    if os.path.abspath(args.ifile) == os.path.abspath(args.ofile):
         print "You tried to overwrite your input with your output file."
         print "Aborted."
         return
@@ -347,12 +347,14 @@ def predict(args):
                 sys.stdout.write("\rWrote %d entries to the out file" % line)
                 sys.stdout.flush()
             line = line + 1
+        print "\rwrote %d entries to the out file" % (
+            line - (1 if hasHeader else 0))
 
     except csv.Error:
         print "Error importing %s in line %d" % (args.ifile, line)
 
+    csvfile.close()
     ofile.close()
-    print ""
 
 
 def compare(args):
