@@ -474,9 +474,13 @@ def clear(args):
     # clear matches
     if args.matches:
         Match1on1.query().truncate()
-        
+
 
 def history(args):
+
+    if args.player1 == args.player2:
+        print "Player1 and Player2 are equal. Use 'history <player>'."
+        return
 
     # store all players in a dict (player_id --> player) and get player1/2
     players = Player.query().all()
@@ -489,13 +493,19 @@ def history(args):
             player2 = player
 
     if args.player2 is None:
+        print "Searching for the history of %s\n" % args.player1
+
         # the table to print out
         table = [['Opponent', 'Outcome', 'Date']]
-    
+
         # get all matches with player 1
         matches = Match1on1.query().filter(
             player1=player1.player_id.value).filter(
             player2=player1.player_id.value).join_or().all()
+
+        won = 0
+        lost = 0
+        draw = 0
 
         # iterate over all matches
         for match in matches:
@@ -503,26 +513,81 @@ def history(args):
             opponent = match.player1.value
             if match.outcome.value == 0.5:
                 outcome = "Draw"
+                draw += 1
             if opponent == player1.player_id.value:
                 opponent = match.player2.value
                 if match.outcome.value == 1:
                     outcome = "Won"
+                    won += 1
                 elif match.outcome.value == 0:
+                    lost += 1
                     outcome = "Lost"
             else:
                 if match.outcome.value == 1:
                     outcome = "Lost"
+                    lost += 1
                 elif match.outcome.value == 0:
                     outcome = "Won"
-            
+                    won += 1
+
             table.append([pdict[opponent].nickname.value, outcome,
                 match.date.value])
 
         # finally print the table
         utils.print_table(table)
+        print "\nStatistics:"
+        print "Won:  %d\nLost: %d\nDraw: %d" % (won, lost, draw)
+
     else:
-        # TODO: implement history for two players
-        print "Not implemented yet for two players"
+        #TODO modify this when IN (...) works
+        print "Searching for the history of %s and %s\n" % (args.player1,
+            args.player2)
+
+        # the table to print out
+        table = [['Winner', 'Date']]
+
+        # get all matches with player 1
+        matches1 = Match1on1.query().filter(
+            player1=player1.player_id.value).filter(
+            player2=player1.player_id.value).join_or().all()
+
+        # get all matches with player 2
+        matches2 = Match1on1.query().filter(
+            player1=player2.player_id.value).filter(
+            player2=player2.player_id.value).join_or().all()
+
+        statistics = {args.player1: 0, args.player2: 0, 'Draw': 0}
+
+        # Find the intersection of the two list. Other methods do not work
+        # because the 'in' operator does not seem to work with instances
+        matches = [x for x in matches1 if
+            [y for y in matches2 if y.match_id.value == x.match_id.value]]
+
+        for match in matches:
+            if match.outcome.value == 0:
+                nickname = pdict[match.player2.value].nickname.value
+                table.append([nickname, match.date.value])
+                statistics[nickname] += 1
+            elif match.outcome.value == 1:
+                nickname = pdict[match.player2.value].nickname.value
+                table.append([nickname, match.date.value])
+                statistics[nickname] += 1
+            else:
+                table.append(['Draw', match.date.value])
+                statistics['Draw'] += 1
+
+        # finally print the table
+        utils.print_table(table)
+
+        print "\nStatistics for %s:" % args.player1
+        print "Won:  %d\nLost: %d\nDraw: %d" % (statistics[args.player1],
+            len(matches) - statistics[args.player1] - statistics["Draw"],
+            statistics["Draw"])
+
+        print "\nStatistics for %s:" % args.player2
+        print "Won:  %d\nLost: %d\nDraw: %d" % (statistics[args.player2],
+            len(matches) - statistics[args.player2] - statistics["Draw"],
+            statistics["Draw"])
 
 
 def parse():
@@ -580,17 +645,17 @@ def parse():
     p_value.set_defaults(func=rating)
 
     # best
-    p_best = subparsers.add_parser('best', help='Query the best player(s) ' \
-        'in the given game and algorithm.')
-    p_best.add_argument('amount', nargs='?', type=int, default=1, help='The number of ' \
-        'players to query. "10" for Top 10')
+    p_best = subparsers.add_parser('best',
+        help='Query the best player(s) in the given game and algorithm.')
+    p_best.add_argument('amount', nargs='?', type=int, default=1,
+        help='The number of players to query. "10" for Top 10')
     p_best.set_defaults(func=lambda x: best_worst(x, True))
 
     # worst
-    p_worst = subparsers.add_parser('worst', help='Query the worst ' \
-        'player(s) in the given game and algorithm.')
-    p_worst.add_argument('amount', nargs='?', type=int, default=1, help='The number of ' \
-        'player to query. "10" for Worst 10')
+    p_worst = subparsers.add_parser('worst',
+        help='Query the worst player(s) in the given game and algorithm.')
+    p_worst.add_argument('amount', nargs='?', type=int, default=1,
+        help='The number of player to query. "10" for Worst 10')
     p_worst.set_defaults(func=lambda x: best_worst(x, False))
 
     # predict
@@ -627,7 +692,7 @@ def parse():
 
     # clear
     p_clear = subparsers.add_parser('clear',
-        help = 'Clears ratings and/or matches. See --ranks and --matches.')
+        help='Clears ratings and/or matches. See --ranks and --matches.')
     p_clear.add_argument('-r', '--ranks', action='store_true',
         help='Clear the ranks and set the default values for all players')
     p_clear.add_argument('-m', '--matches', action='store_true',
