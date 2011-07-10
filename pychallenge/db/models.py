@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 import copy
-from pychallenge.utils.db import db, connection, Query
-from pychallenge.utils.fields import Field, Numeric, Text, PK, FK, Date
+from pychallenge.db import connection, db
+from pychallenge.db.query import Query
+from pychallenge.db.fields import Field, Numeric, Text, PK, FK, Date
 
 
 class Model(object):
@@ -9,13 +10,13 @@ class Model(object):
     This is the general Model class. All Models inherit from this one.
 
     To use the object-relational mapping (ORM) first a class has to inherit
-    from :py:class:`pychallenge.utils.models.Model`. Then, all class
+    from :py:class:`pychallenge.db.models.Model`. Then, all class
     variables, one adds to the class, are interpreted as columns in the
     database.
 
     This is an example providing all features::
 
-        >>> from pychallenge.utils import models
+        >>> from pychallenge.db.import models
         >>> class Player(models.Model):
         ...      player_id = models.PK()
         ...      name = models.Text()
@@ -284,14 +285,14 @@ class Model(object):
     def filter(cls, **kwargs):
         """
         Filter the fields of any select statement to the given fields. See
-        :py:func:`pychallenge.utils.db.Query.filter` for a description of
+        :py:func:`pychallenge.db.db.Query.filter` for a description of
         kwargs and return the prepared / filtered query.
 
         If no :py:func:`join_or` is invoked, all filter statements are
         connected by `AND`.
 
         *Confer*: :py:func:`filter_or`, :py:func:`join_and`,
-        :py:func:`join_or`, :py:func:`pychallenge.utils.db.Query.filter`
+        :py:func:`join_or`, :py:func:`pychallenge.db.db.Query.filter`
         """
         cls.__query__ = cls.__query__.filter(**kwargs)
         return cls
@@ -303,7 +304,7 @@ class Model(object):
         statements by `OR`.
 
         *Confer*: :py:func:`filter`, :py:func:`join_and`,
-        :py:func:`join_or`, :py:func:`pychallenge.utils.db.Query.filter`
+        :py:func:`join_or`, :py:func:`pychallenge.db.db.Query.filter`
         """
         cls.__query__ = cls.__query__.filter_or(**kwargs)
         return cls
@@ -314,7 +315,7 @@ class Model(object):
         This forces a connection of the given filter statements by `AND`.
 
         *Confer*: :py:func:`filter`, :py:func:`filter_or`,
-        :py:func:`join_or`, :py:func:`pychallenge.utils.db.Query.filter`
+        :py:func:`join_or`, :py:func:`pychallenge.db.db.Query.filter`
         """
         cls.__query__ = cls.__query__.join_and()
         return cls
@@ -325,7 +326,7 @@ class Model(object):
         This forces a connection of the given filter statements by `OR`.
 
         *Confer*: :py:func:`filter`, :py:func:`filter_or`,
-        :py:func:`join_and`, :py:func:`pychallenge.utils.db.Query.filter`
+        :py:func:`join_and`, :py:func:`pychallenge.db.db.Query.filter`
         """
         cls.__query__ = cls.__query__.join_or()
         return cls
@@ -353,7 +354,7 @@ class Model(object):
             model
         :type name: String
         :type value: variable
-        :type instance: :py:class:`pychallenge.utils.fields.Field`
+        :type instance: :py:class:`pychallenge.db.fields.Field`
         """
         value = instance = None
         try:

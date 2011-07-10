@@ -114,7 +114,7 @@ class FK(Numeric):
     def related(self):
         """
         """
-        __import__(self.rev_table, fromlist=['pychallenge', 'utils', 'fields'])
+        __import__(self.rev_table, fromlist=['pychallenge', 'db', 'fields'])
         const = self.ref_table()
         return const
 

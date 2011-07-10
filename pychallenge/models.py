@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from pychallenge.utils import models
+from pychallenge.db import models
 
 
 class Config(models.Model):

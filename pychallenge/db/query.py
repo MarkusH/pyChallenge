@@ -1,10 +1,6 @@
 # -*- coding: utf-8 -*-
-import sqlite3
-from pychallenge.utils import settings, fields
-
-
-connection = sqlite3.connect(settings.SETTINGS['DATABASE'])
-db = connection.cursor()
+from pychallenge.conf import settings
+from pychallenge.db import fields
 
 
 class KeyTable():
@@ -109,7 +105,7 @@ class Query():
         def match(x):
             """
             Helper function to create update statement - check for NOT
-            :py:func:`pychallenge.utils.models.Model.pk`
+            :py:func:`pychallenge.db.models.Model.pk`
 
             :param x: fieldname
             :type x: String
@@ -227,7 +223,7 @@ class Query():
 
     def filter_or(self, **kwargs):
         """
-        See :py:func:`pychallenge.utils.db.Query.filter`.
+        See :py:func:`pychallenge.db.db.Query.filter`.
         The only difference is the combination `OR`.
         """
         ff = self._get_filter_fields(**kwargs)
