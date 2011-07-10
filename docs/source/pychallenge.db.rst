@@ -1,19 +1,10 @@
-utils Package
+db Package
 =============
 
-:mod:`utils` Package
+:mod:`db` Package
 --------------------
 
-.. automodule:: pychallenge.utils
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-
-:mod:`db` Module
-----------------
-
-.. automodule:: pychallenge.utils.db
+.. automodule:: pychallenge.db
     :members:
     :undoc-members:
     :show-inheritance:
@@ -22,7 +13,7 @@ utils Package
 :mod:`fields` Module
 ----------------------
 
-.. automodule:: pychallenge.utils.fields
+.. automodule:: pychallenge.db.fields
     :members:
     :undoc-members:
     :show-inheritance:
@@ -34,19 +25,10 @@ utils Package
 :mod:`models` Module
 ----------------------
 
-.. automodule:: pychallenge.utils.models
+.. automodule:: pychallenge.db.models
     :members:
     :undoc-members:
     :show-inheritance:
     :private-members:
     :special-members:
     :exclude-members: __dict__, __module__, __weakref__, id, __query__
-
-
-:mod:`settings` Module
-----------------------
-
-.. automodule:: pychallenge.utils.settings
-    :members:
-    :undoc-members:
-    :show-inheritance:

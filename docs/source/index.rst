@@ -19,8 +19,9 @@ Subpackages
 
 .. toctree::
 
-   pychallenge.utils
    pychallenge.algorithms
+   pychallenge.conf
+   pychallenge.db
 
 
 Indices and tables

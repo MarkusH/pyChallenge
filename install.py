@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from pychallenge.utils.db import db
+from pychallenge.db import db
 
 if __name__ == "__main__":
     db.executescript("""
