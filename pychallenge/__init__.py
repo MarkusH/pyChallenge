@@ -3,7 +3,7 @@
 
 """
 
-__version__ = (1, 0, 'alpha')
+__version__ = (1, 2, 'alpha')
 __authors__ = ['Florian Bausch', 'Markus Döllinger', 'Markus Holtermann',
                'Robert Waury']
 
