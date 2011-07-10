@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import pychallenge.db
+from pychallenge.conf import settings
 from pychallenge.db import fields
 
 
