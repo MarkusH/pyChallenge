@@ -590,7 +590,13 @@ def history(args):
             statistics["Draw"])
 
 
-def parse():
+def parse(arguments=None):
+
+    """
+    Parses the command-line arguments either passed in the parameter
+    arguments, or if None, from the standard input.
+    """
+
     parser = argparse.ArgumentParser(prog='pyChallenge')
     parser.add_argument('-g', '--game', help='The game for the following ' \
         'command. The default value is "chess".')
@@ -707,9 +713,14 @@ def parse():
         help='Nickname of player 2')
     p_history.set_defaults(func=history)
 
-    args = parser.parse_args()
+    if arguments is None:
+        args = parser.parse_args()
+    else:
+        args = parser.parse_args(arguments)
+
     if (not prepare_args(args)):
         return
+
     print ""
     args.func(args)
     print ""
