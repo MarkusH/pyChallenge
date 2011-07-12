@@ -1,2 +1,128 @@
+README
+======
+
+"pyChallenge" is a software that uses different rating systems like ELO
+to compute the skill of players in games like chess.
+
+"pyChallenge" is a student's project at the DHBW Mannheim, Corporate State
+University.
+
+Requirements
+============
+
 sudo apt-get install python-pip
 sudo pip install Sphinx==dev
+PyQt4
+
+Usage 
+=====
+
+A list of all available commands can be obtained by calling:
+
+    ./pychallenge.py -h
+
+A short help message for each command is shown after issuing:
+
+    ./pychallenge.py COMMAND -h
+
+Basics
+------
+
+Many commands depend on the game and rating system used. For each command it is
+possible to specify them using '-g/--game GAME' and '-a/--algorithm ALGORITHM'.
+
+Configuration
+-------------
+
+The first step is to import a config file in csv format. A default config is
+provided in the docs/ folder. It can be loaded by issuing the following
+command:
+
+    ./pychallenge.py import-config docs/constants.csv
+
+
+Importing and Adding Player and Match Data
+------------------------------------------
+
+It is possible to import csv files with match data. It has to be in the
+following format:
+
+    "Month #","White Player #","Black Player #","Score"
+
+For each entry, a new player is created (if it does not exists) and the match
+is inserted into the match table. Note that no rating updates are performed by
+this.
+
+    ./pychallenge.py import-results training_data.csv
+
+It is also possible to manually add a result by calling:
+
+    ./pychallenge.py add-result PLAYER1 PLAYER2 OUTCOME DATE
+
+Both player1 and player2 have to be available. If this is not the case, it
+is necessary to create a player using this command:
+
+    ./pychallenge.py create-player NICKNAME FIRSTNAME LASTNAME
+
+
+Query the History
+-----------------
+
+The command 'history' can be used to list the history of one or two players. It
+shows all matches the player(s) and the number of matches won and lost.
+
+    ./pychallenge.py history PLAYER1 [PLAYER2]
+
+Updating the Ratings
+--------------------
+
+After having imported the match data it is possible to update the ratings
+for each player according to the outcomes of the matches. To do this, call:
+
+    ./pychallenge.py update
+
+
+Best and Worst Players
+----------------------
+
+The commands 'best' and 'worst' can be used to query the N best (or worst)
+players in a given game according to a specified rating system.
+
+    ./pychallenge.py (best|worst) N
+
+Comparison and Predictions
+--------------------------
+
+After having updated the ratings, it is possible to predict the outcomes of
+matches. This can be done using a csv file of future matches in the following
+format:
+
+    "Month #","White Player #","Black Player #","Score"
+
+The outcome for each match is saved in a similar csv file specified by OFILE.
+if '-i/--incremental' is specified, the rating values for the players are
+updated after each predicted match. This is only temporary and has no impact
+on the actual rating values stored in the database.
+
+    ./pychallenge.py predict IFILE OFILE [-i/--incremental]
+
+To compare two players (and to predict the match outcome), issue:
+
+    ./pychallenge.py compare PLAYER1 PLAYER2
+
+To find the best opponent for a given player, call:
+
+    ./pychallenger.py match PLAYER
+
+To simple query the rating of a player, use the following command:
+
+    ./pychallenge.py rating PLAYER
+
+Clear Matches and Ranks
+-----------------------
+
+To clear the database, call the 'clear' command with the switches '-r/--ranks'
+and '-m/--matches' to clear the rank and/or match data.
+
+    ./pychallenge.py clear [-r/--ranks] [-m/--matches]
+
