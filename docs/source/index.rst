@@ -22,6 +22,7 @@ Subpackages
    pychallenge.algorithms
    pychallenge.conf
    pychallenge.db
+   pychallenge.ui
 
 
 Indices and tables

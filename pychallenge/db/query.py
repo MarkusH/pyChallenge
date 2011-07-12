@@ -102,6 +102,10 @@ class Query():
                 "QTYPE_CREATE", "QTYPE_TRUNCATE", "QTYPE_DROP")
 
     def run(self):
+        """
+        Call this method to build the actual query.
+        """
+
         def match(x):
             """
             Helper function to create update statement - check for NOT

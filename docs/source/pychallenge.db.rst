@@ -32,3 +32,15 @@ db Package
     :private-members:
     :special-members:
     :exclude-members: __dict__, __module__, __weakref__, id, __query__
+
+
+:mod:`query` Module
+----------------------
+
+.. automodule:: pychallenge.db.query
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    :private-members:
+    :special-members:
+    :exclude-members: __module__, __weakref__
