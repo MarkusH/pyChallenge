@@ -29,9 +29,9 @@ class PyChallengeGUI(QtGui.QWidget):
         self.qpb5 = QtGui.QPushButton("Update", self)
         self.qpb5.setMinimumSize(self.qpb5.sizeHint())
 
-        self.qedit1 = QtGui.QLineEdit("1",self)
-        self.qedit2 = QtGui.QLineEdit("2",self)
-        self.qedit3 = QtGui.QLineEdit("10",self)
+        self.qedit1 = QtGui.QLineEdit("1", self)
+        self.qedit2 = QtGui.QLineEdit("2", self)
+        self.qedit3 = QtGui.QLineEdit("10", self)
 
         self.qcb = QtGui.QComboBox(self)
         self.qcb.addItem("chess")
