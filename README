@@ -1,10 +1,16 @@
 README
 ======
 
-"pyChallenge" is a software that uses different rating systems like ELO
-to compute the skill of players in games like chess.
+"pyChallenge" is a database software that uses different rating systems like
+ELO to compute the skill of players in games like chess. The following rating
+systems are (or will be) supported:
 
-"pyChallenge" is a student's project at the DHBW Mannheim, Corporate State
+    * ELO           (done)
+    * Glicko        (in progress)
+    * Glicko2       (planned)
+    * TrueSkill     (planned)
+
+pyChallenge is a student's project at the DHBW Mannheim, Corporate State
 University.
 
 Requirements
@@ -14,32 +20,32 @@ sudo apt-get install python-pip
 sudo pip install Sphinx==dev
 PyQt4
 
-Usage 
-=====
+Basic Usage
+===========
 
-A list of all available commands can be obtained by calling:
+pyChallenge is a command-line tool that offers various sub-commands to invoke
+the available features (similar to git or svn). Many commands depend on the
+game and rating system used. For each of these commands, it is possible to
+specify the game using '-g/--game GAME' (the default value is 'chess') and the
+algorithm using '-a/--algorithm ALGORITHM' (the default value is 'elo').
+
+A list of all available commands and options can be obtained by calling:
 
     ./pychallenge.py -h
 
-A short help message for each command is shown after issuing:
+A short help message for each listed command is shown after issuing:
 
     ./pychallenge.py COMMAND -h
-
-Basics
-------
-
-Many commands depend on the game and rating system used. For each command it is
-possible to specify them using '-g/--game GAME' and '-a/--algorithm ALGORITHM'.
 
 Configuration
 -------------
 
-The first step is to import a config file in csv format. A default config is
-provided in the docs/ folder. It can be loaded by issuing the following
-command:
+The first step is to import a config file in the following csv format:
+    "Key"="Value"
+
+A default config is provided in the docs/ folder. It can be loaded by issuing:
 
     ./pychallenge.py import-config docs/constants.csv
-
 
 Importing and Adding Player and Match Data
 ------------------------------------------
@@ -49,21 +55,27 @@ following format:
 
     "Month #","White Player #","Black Player #","Score"
 
+Where 'Month' is an integer, 'White Player' and 'Black Player' are the
+nicknames of the two players and 'Score' is a value in (0, 0.5, 1).
+
 For each entry, a new player is created (if it does not exists) and the match
 is inserted into the match table. Note that no rating updates are performed by
-this.
+this. This command does not depend on any algorithm. The match data is shared
+between all of them.
 
-    ./pychallenge.py import-results training_data.csv
+    ./pychallenge.py import-results CSVFILE
 
-It is also possible to manually add a result by calling:
+It is also possible to manually add a result by calling
 
     ./pychallenge.py add-result PLAYER1 PLAYER2 OUTCOME DATE
 
-Both player1 and player2 have to be available. If this is not the case, it
-is necessary to create a player using this command:
+Both nicknames PLAYER1 and PLAYER2 have to be available. If this is not the
+case, it is necessary to create the players beforehand using
 
     ./pychallenge.py create-player NICKNAME FIRSTNAME LASTNAME
 
+Each player is assigned the default rating values specified in the config
+imported before.
 
 Query the History
 -----------------
