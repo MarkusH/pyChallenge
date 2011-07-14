@@ -8,6 +8,7 @@ from pychallenge.ui import utils
 import csv
 import os
 
+
 supported_games = ['chess']
 supported_algorithms = {'chess': ['elo', 'glicko', 'glicko2']}
 outcomes = {
@@ -87,14 +88,12 @@ def import_config(args):
     """
     Config.query().truncate()
     print "Importing config from", args.file
+    csv
 
     try:
+        csvfile, reader, hasHeader = utils.get_csv(args.file)
         line = 0
-        csvfile = open(args.file, 'rb')
-        sample = csvfile.read(1024)
-        csvfile.seek(0)
-        hasHeader = csv.Sniffer().has_header(sample)
-        reader = csv.reader(csvfile, delimiter=',')
+
         for row in reader:
             if line != 0 or (line == 0 and not hasHeader):
                 entry = Config(key=row[0], value=row[1])
@@ -102,9 +101,12 @@ def import_config(args):
 
             line = line + 1
         Config.commit()
+        csvfile.close()
         print "\nImported", line - 1, "config entries."
     except csv.Error:
         print "Error importing %s in line %d" % (args.file, line)
+    except IOError:
+        print "No such file: %s" % args.file
 
 
 def import_results(args):
@@ -118,12 +120,9 @@ def import_results(args):
     print "Importing results from", args.file
 
     try:
+        csvfile, reader, hasHeader = utils.get_csv(args.file)
         line = 0
-        csvfile = open(args.file, 'rb')
-        sample = csvfile.read(1024)
-        csvfile.seek(0)
-        hasHeader = csv.Sniffer().has_header(sample)
-        reader = csv.reader(csvfile, delimiter=',')
+
         if hasHeader:
             print "\tFirst line of csv file is ignored. It seems to be a " \
                   "header row.\n"
@@ -158,11 +157,12 @@ def import_results(args):
         Rank_Elo.commit()
         Rank_Glicko.commit()
         Match1on1.commit()
+        csvfile.close()
         print "\rImported %d entries." % (line - (1 if hasHeader else 0))
     except csv.Error:
         print "Error importing %s in line %d" % (args.file, line)
-
-    csvfile.close()
+    except IOError:
+        print "No such file: %s" % args.file
 
 
 def update(args):
@@ -294,13 +294,10 @@ def predict(args):
         modes = {True: "incremental", False: "non-incremental"}
         print "Predicting the matches in %s mode" % modes[args.incremental]
         print "Open %s and write into %s..." % (args.ifile, args.ofile)
-        line = 0
-        csvfile = open(args.ifile, 'rb')
-        sample = csvfile.read(1024)
-        csvfile.seek(0)
-        hasHeader = csv.Sniffer().has_header(sample)
-        reader = csv.reader(csvfile, delimiter=',')
+        csvfile, reader, hasHeader = utils.get_csv(args.ifile)
         ofile = open(args.ofile, 'w')
+        line = 0
+
         if hasHeader:
             print "\tFirst line of csv file is ignored. It seems to be a " \
                   "header row.\n"
@@ -347,14 +344,15 @@ def predict(args):
                 sys.stdout.write("\rWrote %d entries to the out file" % line)
                 sys.stdout.flush()
             line = line + 1
-        print "\rwrote %d entries to the out file" % (
+        print "\rWrote %d entries to the out file" % (
             line - (1 if hasHeader else 0))
+        csvfile.close()
+        ofile.close()
 
     except csv.Error:
         print "Error importing %s in line %d" % (args.ifile, line)
-
-    csvfile.close()
-    ofile.close()
+    except IOError:
+        print "One file is missing. Either %s or %s" % (args.ifile, args.ofile)
 
 
 def compare(args):
