@@ -2,7 +2,7 @@
 import sys
 import argparse
 import pychallenge
-from pychallenge.algorithms import elo
+from pychallenge.algorithms import elo, glicko
 from pychallenge.models import Match1on1, Player, Rank_Elo, Rank_Glicko, Config
 from pychallenge.ui import utils
 import csv
@@ -204,6 +204,81 @@ def update(args):
             r.save(commit=False)
         Rank_Elo.commit()
         print "\rUpdated", updates, "matches."
+
+    def update_glicko():
+        sys.stdout.write("Query matches...")
+        matches = Match1on1.query().all()
+        sys.stdout.write("\rBeginning to update %d matches" % len(matches))
+        print ""
+
+        # constants
+        conf = utils.get_config(args)
+        k = conf["elo.chess.k"]
+        func = conf["elo.chess.function"]
+
+        # Query all ratings and store it in a dictionary. This is done to store
+        # the newest rating data in memory. We do not have to commit.
+        ratings = Rank_Glicko.query().all()
+        rdict = {}
+        for r in ratings:
+            rdict[r.player_id.value] = r
+
+        # sort matches by date
+        matches = sorted(matches, key=lambda x: x.date.value)
+        mDict = {}
+
+        for match in matches:
+            if match.date.value in mDict:
+                mDict[match.date.value].append(match)
+            else:
+                mDict[match.date.value] = [match]
+
+        # for each rating period...
+        for period, pMatches in mDict.iteritems():
+            # players in current period --> (RD, rating)
+            pDict = {}
+            for match in pMatches:
+                for player in [match.player1.value, match.player2.value]:
+                    if player not in pDict:
+                        pDict[player] = rdict[player].rd.value, rdict[player].rating.value
+                        # glicko.chess.c
+                        curRD = glicko.getCurrentRD(pDict[player][0], 15.8, period - rdict[player].last_match.value)
+                        curRating = rdict[player].rating.value
+                        # search all matches the player participated (in this period)
+                        ratingList = []
+                        RDList = []
+                        outcomeList = []
+                        for m in pMatches:
+                            # player is player1 of match
+                            if m.player1.value == player:
+                                if m.player2.value in pDict:
+                                    ratingList.append(pDict[m.player2.value][1])
+                                    RDList.append(pDict[m.player2.value][0])
+                                else:
+                                    ratingList.append(rdict[m.player2.value].rating.value)
+                                    RDList.append(rdict[m.player2.value].rd.value)
+                                outcomeList.append(m.outcome.value)
+                            # player player2 of match
+                            if m.player2.value == player:
+                                if m.player1.value in pDict:
+                                    ratingList.append(pDict[m.player1.value][1])
+                                    RDList.append(pDict[m.player1.value][0])
+                                else:
+                                    ratingList.append(rdict[m.player1.value].rating.value)
+                                    RDList.append(rdict[m.player1.value].rd.value)
+                                outcomeList.append(1.0 - m.outcome.value)
+
+                        # calculate new rating
+                        newRating = glicko.newRating(curRD, curRating, ratingList, RDList, outcomeList)
+                        newRD = glicko.newRD(curRD, newRating, ratingList, RDList)
+
+                        rdict[player].rd.value = newRD
+                        rdict[player].rating.value = newRating
+                        rdict[player].last_match.value = period
+                        rdict[player].save(commit=False)
+
+            Rank_Glicko.commit()   
+
     """
     Updates the ratings for all players.
 
@@ -211,7 +286,7 @@ def update(args):
     :type args: namespace
     """
 
-    update_funcs = {'elo': update_elo}
+    update_funcs = {'elo': update_elo, 'glicko': update_glicko}
 
     print "Updating the ratings for all players in %s using %s" % (args.game,
         args.algorithm)
