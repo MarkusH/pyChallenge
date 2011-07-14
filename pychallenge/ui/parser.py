@@ -418,7 +418,7 @@ def best_worst(args, best):
     def best_worst_elo():
         ranks = Rank_Elo.query().all()
         ranks = sorted(ranks, key=lambda x: x.value.value, reverse=best)
-        print "Rank\tRating\tNick\tFirst\tName"
+        print "Rank\tRating\tNick\tForename\tSurname"
         for i in range(min(args.amount, len(ranks))):
             player = Player().query().get(player_id=ranks[i].player_id.value)
             print "%d\t%d\t%s\t%s,\t%s" % (i + 1, ranks[i].value.value,
