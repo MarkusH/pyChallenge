@@ -2,7 +2,7 @@
 import copy
 from pychallenge.db import connection, db
 from pychallenge.db.query import Query
-from pychallenge.db.fields import Field, Numeric, Text, PK, FK, Date
+from pychallenge.db.fields import Date, Field, Numeric, Text, PK, FK
 
 
 class Model(object):
@@ -16,7 +16,7 @@ class Model(object):
 
     This is an example providing all features::
 
-        >>> from pychallenge.db.import models
+        >>> from pychallenge.db import models
         >>> class Player(models.Model):
         ...      player_id = models.PK()
         ...      name = models.Text()
@@ -51,14 +51,17 @@ class Model(object):
         >>> Player.commit()
         >>> Player.query().all()
         [<player pk=2>, <player pk=3>, <player pk=4>, <player pk=5>,
-                <player pk=6>, <player pk=7>]
-        >>> Player.query().filter(player_id__lt=4).filter(player_id__ge=6)\
+        <player pk=6>, <player pk=7>]
+        >>> Player.query().filter(player_id__lt=4).filter(player_id__ge=6) \\
         ...     .all()
-        >>> Player.query().filter(player_id__lt=4).filter(player_id__ge=6)\
+        ...
+        >>> Player.query().filter(player_id__lt=4).filter(player_id__ge=6) \\
         ...     .join_or().all()
+        ...
         [<player pk=2>, <player pk=3>, <player pk=6>, <player pk=7>]
         >>> Player.query().truncate()
         >>> Player.query().drop()
+
     """
     __query__ = None
 
@@ -114,12 +117,7 @@ class Model(object):
             db.execute(statement, values)
             result = []
             for row in db:
-                i = 0
-                tmp = {}
-                while i < len(row):
-                    tmp[fields[i]] = row[i]
-                    i += 1
-                instance = cls(**tmp)
+                instance = cls(**row)
                 result.append(copy.copy(instance))
             return result if len(result) > 0 else []
         return []
@@ -249,12 +247,7 @@ class Model(object):
             statement, values = ret
             db.execute(statement, values)
             for row in db:
-                i = 0
-                tmp = {}
-                while i < len(row):
-                    tmp[fields[i]] = row[i]
-                    i += 1
-                instance = cls(**tmp)
+                instance = cls(**row)
                 return instance
         return None
 
