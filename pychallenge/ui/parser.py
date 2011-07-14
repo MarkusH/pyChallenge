@@ -88,7 +88,6 @@ def import_config(args):
     """
     Config.query().truncate()
     print "Importing config from", args.file
-    csv
 
     try:
         csvfile, reader, hasHeader = utils.get_csv(args.file)
