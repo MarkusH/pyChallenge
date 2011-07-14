@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from pychallenge.models import Player, Rank_Elo, Rank_Glicko, Config
+import csv
 
 
 def get_rating(args, p1=None, p2=None):
@@ -129,3 +130,17 @@ def print_table(table):
             col = str(row[i]).rjust(col_paddings[i] + 2)
             print col,
         print ""
+
+def get_csv(filename):
+    """
+    Opens a csv file and returns the file, the reader and, if it has a header
+    :param filename: the file name of the csv file
+    :type filename: String
+    :return: Tupel (file, reader, boolean hasHeader)
+    """
+    csvfile = open(filename, 'rb')
+    sample = csvfile.read(1024)
+    csvfile.seek(0)
+    hasHeader = csv.Sniffer().has_header(sample)
+    reader = csv.reader(csvfile, delimiter=',')
+    return (csvfile, reader, hasHeader)
