@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from pychallenge.db import db
 from pychallenge.models import Config, Match1on1, Player, Rank_Elo, Rank_Glicko
 
 if __name__ == "__main__":

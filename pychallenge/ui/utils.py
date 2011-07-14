@@ -131,6 +131,7 @@ def print_table(table):
             print col,
         print ""
 
+
 def get_csv(filename):
     """
     Opens a csv file and returns the file, the reader and, if it has a header
