@@ -16,7 +16,7 @@ class Model(object):
 
     This is an example providing all features::
 
-        >>> from pychallenge.db.import models
+        >>> from pychallenge.db import models
         >>> class Player(models.Model):
         ...      player_id = models.PK()
         ...      name = models.Text()
