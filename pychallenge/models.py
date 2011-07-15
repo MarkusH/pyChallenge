@@ -43,4 +43,4 @@ class Rank_Glicko(models.Model):
     game_id = models.Numeric() #FK('Game')
     rd = models.Numeric(value=350)
     rating = models.Numeric(value=1500)
-    last_match = models.Numeric()
+    last_match = models.Numeric(value=1)
