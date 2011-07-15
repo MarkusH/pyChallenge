@@ -234,13 +234,11 @@ class Model(object):
     @classmethod
     def get(cls, **kwargs):
         """
-        :return: returns a sigle instances of the model or None if there is
+        :return: returns a single instances of the model or None if there is
             no object matching the pattern.
-        :rtype: an instance of the current class
+        :rtype: either an instance of the current model class or None
         """
         cls.__query__ = cls.__query__.filter(**kwargs).limit(1)
-        fields = [f for f, t in cls.__dict__.items() if isinstance(t, Field)]
-        fields.sort()
 
         ret = cls.__query__.run()
         if ret:
