@@ -92,12 +92,17 @@ class FK(Numeric):
     for foreign key validation.
     """
 
-    def __init__(self, ref_table, value=0):
+    def __init__(self, ref_table, ref_field, value=0):
         """
         :param ref_table: defines the foreign table
+        :param ref_field: defines the lookup field for the foreign table
+        :param value: the field value
         :type ref_table: String
+        :type ref_field: String
+        :type value: Integer
         """
         self.ref_table = ref_table
+        self.ref_field = ref_field
         self.value = self.clean(value)
 
     def clean(self, value):
@@ -111,12 +116,14 @@ class FK(Numeric):
         except ValueError:
             return None
 
+    @property
     def related(self):
         """
         """
-        __import__(self.rev_table, fromlist=['pychallenge', 'db', 'fields'])
-        const = self.ref_table()
-        return const
+        module = __import__("pychallenge.models", fromlist=['pychallenge'])
+        ref_class = module.__dict__.get(self.ref_table)
+
+        return ref_class.query().get(**{self.ref_field: self.value})
 
 
 class Date(Text):

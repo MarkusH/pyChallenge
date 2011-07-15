@@ -342,7 +342,7 @@ class Query():
                     raise AttributeError("Operator %s unknown" %
                         parts[1].upper)
 
-            # stupid user :-)  --  field does not exists
+            # field does not exists
             else:
                 raise AttributeError("Unknown field %s" % f)
         return flds

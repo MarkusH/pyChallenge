@@ -2,11 +2,12 @@
 import sys
 import argparse
 import pychallenge
-from pychallenge.algorithms import elo
+from pychallenge.algorithms import elo, glicko
 from pychallenge.models import Match1on1, Player, Rank_Elo, Rank_Glicko, Config
 from pychallenge.ui import utils
 import csv
 import os
+
 
 supported_games = ['chess']
 supported_algorithms = {'chess': ['elo', 'glicko', 'glicko2']}
@@ -89,12 +90,9 @@ def import_config(args):
     print "Importing config from", args.file
 
     try:
+        csvfile, reader, hasHeader = utils.get_csv(args.file)
         line = 0
-        csvfile = open(args.file, 'rb')
-        sample = csvfile.read(1024)
-        csvfile.seek(0)
-        hasHeader = csv.Sniffer().has_header(sample)
-        reader = csv.reader(csvfile, delimiter=',')
+
         for row in reader:
             if line != 0 or (line == 0 and not hasHeader):
                 entry = Config(key=row[0], value=row[1])
@@ -102,9 +100,12 @@ def import_config(args):
 
             line = line + 1
         Config.commit()
+        csvfile.close()
         print "\nImported", line - 1, "config entries."
     except csv.Error:
         print "Error importing %s in line %d" % (args.file, line)
+    except IOError:
+        print "No such file: %s" % args.file
 
 
 def import_results(args):
@@ -118,12 +119,9 @@ def import_results(args):
     print "Importing results from", args.file
 
     try:
+        csvfile, reader, hasHeader = utils.get_csv(args.file)
         line = 0
-        csvfile = open(args.file, 'rb')
-        sample = csvfile.read(1024)
-        csvfile.seek(0)
-        hasHeader = csv.Sniffer().has_header(sample)
-        reader = csv.reader(csvfile, delimiter=',')
+
         if hasHeader:
             print "\tFirst line of csv file is ignored. It seems to be a " \
                   "header row.\n"
@@ -158,11 +156,12 @@ def import_results(args):
         Rank_Elo.commit()
         Rank_Glicko.commit()
         Match1on1.commit()
+        csvfile.close()
         print "\rImported %d entries." % (line - (1 if hasHeader else 0))
     except csv.Error:
         print "Error importing %s in line %d" % (args.file, line)
-
-    csvfile.close()
+    except IOError:
+        print "No such file: %s" % args.file
 
 
 def update(args):
@@ -204,6 +203,81 @@ def update(args):
             r.save(commit=False)
         Rank_Elo.commit()
         print "\rUpdated", updates, "matches."
+
+    def update_glicko():
+        sys.stdout.write("Query matches...")
+        matches = Match1on1.query().all()
+        sys.stdout.write("\rBeginning to update %d matches" % len(matches))
+        print ""
+
+        # constants
+        conf = utils.get_config(args)
+        k = conf["elo.chess.k"]
+        func = conf["elo.chess.function"]
+
+        # Query all ratings and store it in a dictionary. This is done to store
+        # the newest rating data in memory. We do not have to commit.
+        ratings = Rank_Glicko.query().all()
+        rdict = {}
+        for r in ratings:
+            rdict[r.player_id.value] = r
+
+        # sort matches by date
+        matches = sorted(matches, key=lambda x: x.date.value)
+        mDict = {}
+
+        for match in matches:
+            if match.date.value in mDict:
+                mDict[match.date.value].append(match)
+            else:
+                mDict[match.date.value] = [match]
+
+        # for each rating period...
+        for period, pMatches in mDict.iteritems():
+            # players in current period --> (RD, rating)
+            pDict = {}
+            for match in pMatches:
+                for player in [match.player1.value, match.player2.value]:
+                    if player not in pDict:
+                        pDict[player] = rdict[player].rd.value, rdict[player].rating.value
+                        # glicko.chess.c
+                        curRD = glicko.getCurrentRD(pDict[player][0], 15.8, period - rdict[player].last_match.value)
+                        curRating = rdict[player].rating.value
+                        # search all matches the player participated (in this period)
+                        ratingList = []
+                        RDList = []
+                        outcomeList = []
+                        for m in pMatches:
+                            # player is player1 of match
+                            if m.player1.value == player:
+                                if m.player2.value in pDict:
+                                    ratingList.append(pDict[m.player2.value][1])
+                                    RDList.append(pDict[m.player2.value][0])
+                                else:
+                                    ratingList.append(rdict[m.player2.value].rating.value)
+                                    RDList.append(rdict[m.player2.value].rd.value)
+                                outcomeList.append(m.outcome.value)
+                            # player player2 of match
+                            if m.player2.value == player:
+                                if m.player1.value in pDict:
+                                    ratingList.append(pDict[m.player1.value][1])
+                                    RDList.append(pDict[m.player1.value][0])
+                                else:
+                                    ratingList.append(rdict[m.player1.value].rating.value)
+                                    RDList.append(rdict[m.player1.value].rd.value)
+                                outcomeList.append(1.0 - m.outcome.value)
+
+                        # calculate new rating
+                        newRating = glicko.newRating(curRD, curRating, ratingList, RDList, outcomeList)
+                        newRD = glicko.newRD(curRD, newRating, ratingList, RDList)
+
+                        rdict[player].rd.value = newRD
+                        rdict[player].rating.value = newRating
+                        rdict[player].last_match.value = period
+                        rdict[player].save(commit=False)
+
+            Rank_Glicko.commit()   
+
     """
     Updates the ratings for all players.
 
@@ -211,7 +285,7 @@ def update(args):
     :type args: namespace
     """
 
-    update_funcs = {'elo': update_elo}
+    update_funcs = {'elo': update_elo, 'glicko': update_glicko}
 
     print "Updating the ratings for all players in %s using %s" % (args.game,
         args.algorithm)
@@ -294,13 +368,10 @@ def predict(args):
         modes = {True: "incremental", False: "non-incremental"}
         print "Predicting the matches in %s mode" % modes[args.incremental]
         print "Open %s and write into %s..." % (args.ifile, args.ofile)
-        line = 0
-        csvfile = open(args.ifile, 'rb')
-        sample = csvfile.read(1024)
-        csvfile.seek(0)
-        hasHeader = csv.Sniffer().has_header(sample)
-        reader = csv.reader(csvfile, delimiter=',')
+        csvfile, reader, hasHeader = utils.get_csv(args.ifile)
         ofile = open(args.ofile, 'w')
+        line = 0
+
         if hasHeader:
             print "\tFirst line of csv file is ignored. It seems to be a " \
                   "header row.\n"
@@ -347,14 +418,15 @@ def predict(args):
                 sys.stdout.write("\rWrote %d entries to the out file" % line)
                 sys.stdout.flush()
             line = line + 1
-        print "\rwrote %d entries to the out file" % (
+        print "\rWrote %d entries to the out file" % (
             line - (1 if hasHeader else 0))
+        csvfile.close()
+        ofile.close()
 
     except csv.Error:
         print "Error importing %s in line %d" % (args.ifile, line)
-
-    csvfile.close()
-    ofile.close()
+    except IOError:
+        print "One file is missing. Either %s or %s" % (args.ifile, args.ofile)
 
 
 def compare(args):
@@ -418,7 +490,7 @@ def best_worst(args, best):
     def best_worst_elo():
         ranks = Rank_Elo.query().all()
         ranks = sorted(ranks, key=lambda x: x.value.value, reverse=best)
-        print "Rank\tRating\tNick\tFirst\tName"
+        print "Rank\tRating\tNick\tForename\tSurname"
         for i in range(min(args.amount, len(ranks))):
             player = Player().query().get(player_id=ranks[i].player_id.value)
             print "%d\t%d\t%s\t%s,\t%s" % (i + 1, ranks[i].value.value,
