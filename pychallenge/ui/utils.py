@@ -142,6 +142,5 @@ def get_csv(filename):
     csvfile = open(filename, 'rb')
     sample = csvfile.read(1024)
     csvfile.seek(0)
-    hasHeader = csv.Sniffer().has_header(sample)
-    reader = csv.reader(csvfile, delimiter=',')
-    return (csvfile, reader, hasHeader)
+    return (csvfile, csv.reader(csvfile, delimiter=','),
+        csv.Sniffer().has_header(sample))
