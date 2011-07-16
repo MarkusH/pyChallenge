@@ -2,6 +2,45 @@
 from pychallenge.models import Player, Rank_Elo, Rank_Glicko, Config
 import csv
 
+# a list of all supported games
+supported_games = ['chess']
+
+
+# A mappint game --> algorithm that specifies which algorithm is supported for
+# a game
+supported_algorithms = {'chess': ['elo', 'glicko']}
+
+
+# outcome --> string
+outcomes = {0.0: "Player 1 lost", 1.0: "Player 1 won", 0.5: "Draw"}
+
+
+def prepare_args(args):
+    """
+    Prepares the arguments and checks if they  are valid. If not, prints an
+    error message. If some arguments are optional and were not set by the
+    user, it inserts the default values.
+
+    :param args: A list with arguments from the argument parser
+    :type args: namespace
+    :return: True, if the arguments are valid, False otherwise
+    :rtype: bool
+    """
+    if (args.game == None):
+        args.game = "chess"
+    elif (not args.game in ['chess']):
+        print "Error: %s is not a valid game! Choose from %s" % (args.game,
+            supported_games)
+        return False
+
+    if (args.algorithm == None):
+        args.algorithm = "elo"
+    elif (not args.algorithm in supported_algorithms[args.game]):
+        print "Error: %s is not a valid algorithm for %s! Choose from %s" % (
+            args.algorithm, args.game, supported_algorithms[args.game])
+        return False
+    return True
+
 
 def get_rating(args, p1=None, p2=None):
     def rating_elo(player):

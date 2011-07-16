@@ -9,45 +9,6 @@ import csv
 import os
 
 
-supported_games = ['chess']
-supported_algorithms = {'chess': ['elo', 'glicko', 'glicko2']}
-outcomes = {
-    0.0: "Player 1 lost",
-    1.0: "Player 1 won",
-    0.5: "Draw"}
-
-
-def prepare_args(args):
-    """
-    Prepares the arguments and checks if they  are valid. If not, prints an
-    error message. If some arguments are optional and were not set by the
-    user, it inserts the default values.
-
-    :param args: A list with arguments from the argument parser
-    :type args: namespace
-    :return: True, if the arguments are valid, False otherwise
-    :rtype: bool
-    """
-    if (args.game == None):
-        args.game = "chess"
-    elif (not args.game in ['chess']):
-        print "Error: %s is not a valid game! Choose from %s" % (args.game,
-            supported_games)
-        return False
-
-    if (args.algorithm == None):
-        args.algorithm = "elo"
-    elif (not args.algorithm in supported_algorithms[args.game]):
-        print "Error: %s is not a valid algorithm for %s! Choose from %s" % (
-            args.algorithm, args.game, supported_algorithms[args.game])
-        return False
-    return True
-
-#####################################################################
-#                               sub commands                        #
-#####################################################################
-
-
 def add_result(args):
     """
     Adds a result row to the result table.
@@ -61,7 +22,7 @@ def add_result(args):
     print "Adding a result for %s" % args.game
     print "\tPlayer 1:", args.player1
     print "\tPlayer 2:", args.player2
-    print "\tOutcome: ", outcomes[args.outcome]
+    print "\tOutcome: ", utils.outcomes[args.outcome]
     print "\tDate: ", args.date
 
     player1 = utils.add_player(args.player1, commit=False)
@@ -74,8 +35,6 @@ def add_result(args):
         date=args.date)
     dbRow.save(commit=True)
 
-    print "Player id for %s is %s" % (args.player1, pid1)
-    print "Player id for %s is %s" % (args.player2, pid2)
     print "Done"
 
 
@@ -101,7 +60,7 @@ def import_config(args):
             line = line + 1
         Config.commit()
         csvfile.close()
-        print "\nImported", line - 1, "config entries."
+        print "Imported", line - 1, "config entries."
     except csv.Error:
         print "Error importing %s in line %d" % (args.file, line)
     except IOError:
@@ -210,11 +169,6 @@ def update(args):
         sys.stdout.write("\rBeginning to update %d matches" % len(matches))
         print ""
 
-        # constants
-        conf = utils.get_config(args)
-        k = conf["elo.chess.k"]
-        func = conf["elo.chess.function"]
-
         # Query all ratings and store it in a dictionary. This is done to store
         # the newest rating data in memory. We do not have to commit.
         ratings = Rank_Glicko.query().all()
@@ -239,11 +193,13 @@ def update(args):
             for match in pMatches:
                 for player in [match.player1.value, match.player2.value]:
                     if player not in pDict:
-                        pDict[player] = rdict[player].rd.value, rdict[player].rating.value
+                        pDict[player] = (rdict[player].rd.value,
+                            rdict[player].rating.value)
                         # glicko.chess.c
-                        curRD = glicko.getCurrentRD(pDict[player][0], 15.8, period - rdict[player].last_match.value)
+                        curRD = glicko.getCurrentRD(pDict[player][0], 15.8,
+                            period - rdict[player].last_match.value)
                         curRating = rdict[player].rating.value
-                        # search all matches the player participated (in this period)
+                        # search all matches the player participated, in period
                         ratingList = []
                         RDList = []
                         outcomeList = []
@@ -251,32 +207,41 @@ def update(args):
                             # player is player1 of match
                             if m.player1.value == player:
                                 if m.player2.value in pDict:
-                                    ratingList.append(pDict[m.player2.value][1])
+                                    ratingList.append(
+                                        pDict[m.player2.value][1])
                                     RDList.append(pDict[m.player2.value][0])
                                 else:
-                                    ratingList.append(rdict[m.player2.value].rating.value)
-                                    RDList.append(rdict[m.player2.value].rd.value)
+                                    ratingList.append(
+                                        rdict[m.player2.value].rating.value)
+                                    RDList.append(
+                                        rdict[m.player2.value].rd.value)
                                 outcomeList.append(m.outcome.value)
                             # player player2 of match
                             if m.player2.value == player:
                                 if m.player1.value in pDict:
-                                    ratingList.append(pDict[m.player1.value][1])
+                                    ratingList.append(
+                                        pDict[m.player1.value][1])
                                     RDList.append(pDict[m.player1.value][0])
                                 else:
-                                    ratingList.append(rdict[m.player1.value].rating.value)
-                                    RDList.append(rdict[m.player1.value].rd.value)
+                                    ratingList.append(
+                                        rdict[m.player1.value].rating.value)
+                                    RDList.append(
+                                        rdict[m.player1.value].rd.value)
                                 outcomeList.append(1.0 - m.outcome.value)
 
                         # calculate new rating
-                        newRating = glicko.newRating(curRD, curRating, ratingList, RDList, outcomeList)
-                        newRD = glicko.newRD(curRD, newRating, ratingList, RDList)
+                        newRating = glicko.newRating(curRD, curRating,
+                            ratingList, RDList, outcomeList)
+                        newRD = glicko.newRD(curRD, newRating, ratingList,
+                            RDList)
 
                         rdict[player].rd.value = newRD
                         rdict[player].rating.value = newRating
                         rdict[player].last_match.value = period
                         rdict[player].save(commit=False)
 
-            Rank_Glicko.commit()   
+            Rank_Glicko.commit()
+            print "Done"
 
     """
     Updates the ratings for all players.
@@ -304,6 +269,10 @@ def match(args):
                 deviation = abs(r.value.value - rating.value.value)
         return best
 
+    def match_glicko(rating):
+        print "Not implemented yet"
+        return None
+
     """
     Finds the best opponent for a given player.
 
@@ -311,7 +280,7 @@ def match(args):
     :type args: namespace
     """
 
-    match_funcs = {'elo': match_elo}
+    match_funcs = {'elo': match_elo, 'glicko': match_glicko}
 
     rating = utils.get_rating(args)
     if rating is None:
@@ -347,8 +316,13 @@ def rating(args):
         print "The rating for player %s in %s using %s is not known." % (
             args.player, args.game, args.algorithm)
     else:
-        print "The rating for player %s in %s using %s is %d." % (args.player,
-            args.game, args.algorithm, player.value.value)
+        if args.algorithm == "elo":
+            print "The rating for player %s in %s using %s is %d." % (
+                args.player, args.game, args.algorithm, player.value.value)
+        else:
+            print "The rating for player %s in %s using %s is %d " \
+                "with rating deviation %d" % (args.player, args.game,
+                args.algorithm, player.rating.value, player.rd.value)
 
 
 def predict(args):
@@ -362,6 +336,10 @@ def predict(args):
     if os.path.abspath(args.ifile) == os.path.abspath(args.ofile):
         print "You tried to overwrite your input with your output file."
         print "Aborted."
+        return
+
+    if args.algorithm == "glicko":
+        print "Not implemented yet"
         return
 
     try:
@@ -441,6 +419,10 @@ def compare(args):
         print "You cannot compare player %s with himself" % args.player1
         return
 
+    if args.algorithm == "glicko":
+        print "Not implemented yet"
+        return
+
     print "Comparing the rating of two players in %s with %s:" % (args.game,
         args.algorithm)
 
@@ -496,11 +478,14 @@ def best_worst(args, best):
             print "%d\t%d\t%s\t%s,\t%s" % (i + 1, ranks[i].value.value,
                 player.nickname.value, player.firstname.value,
                 player.lastname.value)
+
+    def best_worst_glicko():
+        print "Not implemented yet"
     """
     Queries the n best or worst players of a given pair of game and algorithm.
     """
 
-    best_worst_funcs = {'elo': best_worst_elo}
+    best_worst_funcs = {'elo': best_worst_elo, 'glicko': best_worst_glicko}
 
     print "The %s %d players in %s with %s:" % (("Top" if best else "Worst"),
         args.amount, args.game, args.algorithm)
@@ -790,7 +775,7 @@ def parse(arguments=None):
     else:
         args = parser.parse_args(arguments)
 
-    if (not prepare_args(args)):
+    if (not utils.prepare_args(args)):
         return
 
     print ""
