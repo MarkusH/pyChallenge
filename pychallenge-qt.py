@@ -13,6 +13,7 @@ class PyChallengeGUI(QtGui.QWidget):
 
         self.qtext = QtGui.QTextEdit(self)
         self.qtext.setReadOnly(True)
+        self.qtext.setFontFamily('Monospace')
 
         self.qpb1 = QtGui.QPushButton("Get Rating", self)
         self.qpb1.setMinimumSize(self.qpb1.sizeHint())

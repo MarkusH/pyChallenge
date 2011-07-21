@@ -164,7 +164,7 @@ def print_table(table):
         col_paddings.append(get_max_width(table, i))
 
     for row in table:
-        print row[0].ljust(col_paddings[0] + 1),
+        print str(row[0]).ljust(col_paddings[0] + 1),
         for i in range(1, len(row)):
             col = str(row[i]).rjust(col_paddings[i] + 2)
             print col,
