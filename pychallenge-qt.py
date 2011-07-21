@@ -38,7 +38,7 @@ class PyChallengeGUI(QtGui.QWidget):
 
         self.qcb2 = QtGui.QComboBox(self)
         self.qcb2.addItem("elo")
-        #self.qcb2.addItem("glicko")
+        self.qcb2.addItem("glicko")
         #self.qcb2.addItem("glicko2")
 
         qlab1 = QtGui.QLabel(self)
