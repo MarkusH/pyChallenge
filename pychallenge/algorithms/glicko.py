@@ -36,7 +36,7 @@ def getCurrentRD(RD, c, t):
 
     :param RD: level of certainty (maximum 350) (Ratings Deviation)
     :param c: uncertainty over time (choosen for each game)
-    :param t: most recent raing period (>=1)
+    :param t: most recent rating period (>=1)
     :type RD: float
     :type c: float
     :type t: integer

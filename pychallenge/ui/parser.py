@@ -7,6 +7,7 @@ from pychallenge.models import Match1on1, Player, Rank_Elo, Rank_Glicko, Config
 from pychallenge.ui import utils
 import csv
 import os
+import math
 
 
 def add_result(args):
@@ -241,8 +242,17 @@ def update(args):
                         rdict[player].save(commit=False)
 
             Rank_Glicko.commit()
-            print "Done"
-
+            stage = period % 4
+            if stage == 0:
+                sys.stdout.write("\r| ")
+            elif stage == 1:
+                sys.stdout.write("\r/ ")
+            elif stage == 2:
+                sys.stdout.write("\r--")
+            else:
+                sys.stdout.write("\r\\ ")
+            sys.stdout.flush()
+        print "\rDone."
     """
     Updates the ratings for all players.
 
@@ -408,6 +418,29 @@ def predict(args):
 
 
 def compare(args):
+    def compare_elo(ratings):
+        value1 = ratings[0].value.value
+        value2 = ratings[1].value.value
+        if value1 != value2:
+            winning_player = args.player1 if value1 > value2 else args.player2
+            print "\tPlayer %s will (probably) win." % winning_player
+            print "\tRank player %s: %d" % (args.player1, value1)
+            print "\tRank player %s: %d" % (args.player2, value2)
+            print "\tPlayer %s is %d points better." % (winning_player,
+                abs(value1 - value2))
+        else:
+            print "Both players have the same elo rank (%d)" % value1
+
+    def compare_glicko(ratings):
+        exp = glicko.expectation(ratings[0].rating.value, ratings[1].rating.value, ratings[1].rd.value)
+        print "The result is %f.\n" % exp
+        if 0.45 <= exp <= 0.55:
+            print "They will probably draw."
+        elif exp > 0.55:
+            print "Player %s will (probably) win." % args.player1
+        else:
+            print "Player %s will (probably) win." % args.player2
+
     """
     Compares the rating of two given players.
 
@@ -417,10 +450,6 @@ def compare(args):
 
     if args.player1 is args.player2:
         print "You cannot compare player %s with himself" % args.player1
-        return
-
-    if args.algorithm == "glicko":
-        print "Not implemented yet"
         return
 
     print "Comparing the rating of two players in %s with %s:" % (args.game,
@@ -438,17 +467,8 @@ def compare(args):
         print "Player with nickname %s not known." % args.player2
         return
 
-    value1 = ratings[0].value.value
-    value2 = ratings[1].value.value
-    if value1 != value2:
-        winning_player = args.player1 if value1 > value2 else args.player2
-        print "\tPlayer %s will (probably) win." % winning_player
-        print "\tRank player %s: %d" % (args.player1, value1)
-        print "\tRank player %s: %d" % (args.player2, value2)
-        print "\tPlayer %s is %d points better." % (winning_player,
-            abs(value1 - value2))
-    else:
-        print "Both players have the same elo rank (%d)" % value1
+    compare_funcs = {'elo': compare_elo, 'glicko': compare_glicko}
+    compare_funcs[args.algorithm](ratings)
 
 
 def create_player(args):
@@ -472,15 +492,37 @@ def best_worst(args, best):
     def best_worst_elo():
         ranks = Rank_Elo.query().all()
         ranks = sorted(ranks, key=lambda x: x.value.value, reverse=best)
-        print "Rank\tRating\tNick\tForename\tSurname"
+
+        # the table to print out
+        table = [['Rank', 'Rating', 'Nick', 'Firstname', 'Lastname', 'ID']]
+        #print "Rank\tRating\tNick\tForename\tSurname\tid"
+
         for i in range(min(args.amount, len(ranks))):
             player = Player().query().get(player_id=ranks[i].player_id.value)
-            print "%d\t%d\t%s\t%s,\t%s" % (i + 1, ranks[i].value.value,
+            #print "%d\t%d\t%s\t%s,\t%s\t%s" % (i + 1, ranks[i].value.value,
+            #    player.nickname.value, player.firstname.value,
+            #    player.lastname.value, player.player_id.value)
+            table.append([i + 1, ranks[i].value.value,
                 player.nickname.value, player.firstname.value,
-                player.lastname.value)
+                player.lastname.value, player.player_id.value])
+        utils.print_table(table)
 
     def best_worst_glicko():
-        print "Not implemented yet"
+        ranks = Rank_Glicko.query().all()
+        ranks = sorted(ranks, key=lambda x: x.rating.value - (x.rd.value), reverse=best)
+
+        table = [['Rank', 'Rating', 'RD', 'Nick', 'Firstname', 'Lastname', 'ID']]
+        #print "Rank\tRating\tRD\tNick\tForename\tSurname\tid"
+
+        for i in range(min(args.amount, len(ranks))):
+            player = Player().query().get(player_id=ranks[i].player_id.value)
+            #print "%d\t%d\t%d\t%s\t%s,\t%s\t%s" % (i + 1, ranks[i].rating.value,
+            #    ranks[i].rd.value, player.nickname.value, player.firstname.value,
+            #    player.lastname.value, player.player_id.value)
+            table.append([i + 1, int(ranks[i].rating.value),
+                int(ranks[i].rd.value), player.nickname.value, player.firstname.value,
+                player.lastname.value, player.player_id.value])
+        utils.print_table(table)
     """
     Queries the n best or worst players of a given pair of game and algorithm.
     """
